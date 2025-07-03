@@ -3,7 +3,7 @@
 
 # Logs
 *.log
-
+*.lock
 # Virtualenv
 venv/
 .env
