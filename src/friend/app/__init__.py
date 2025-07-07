@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
-from loguru import logger
-from fastapi import FastAPI, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer
-from starlette.responses import RedirectResponse
-from fastapi.params import Depends
+
 import jwt
+from fastapi import FastAPI, HTTPException, status, Request
+from fastapi.params import Depends
+from fastapi.security import OAuth2PasswordBearer
+from loguru import logger
+from starlette.responses import RedirectResponse
+
+from src.friend.app.UserRouter import userRouter
 from src.friend.config.SettingConfig import settings
 
 
@@ -22,6 +25,7 @@ app = FastAPI(
     deprecation="开始搭建自己的python基础服务",
     lifespan=lifespan,
 )
+app.include_router(userRouter,prefix="/user",tags=["用户"])
 
 # 验证JWT的依赖项
 async def get_current_user(token:str=Depends(oauth)):

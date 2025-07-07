@@ -1,13 +1,10 @@
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
-from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import AsyncGenerator
-from src.friend.app import app
+
 from src.friend.config.SettingConfig import settings
 
-
-# 创建异步数据库引擎
+# 创建引擎
 async_engine = create_async_engine(
     url=settings.DATABASE_PG_URL,
     echo=True,
@@ -16,24 +13,32 @@ async_engine = create_async_engine(
     pool_pre_ping=True,
     future=True
 )
-#只创建一次 AsyncSession 工厂
-AsyncSessionLocal = sessionmaker(
+
+# 只创建一次 sessionmaker
+async_session_maker = sessionmaker(
     bind=async_engine,
     class_=AsyncSession,
     expire_on_commit=False
 )
-@app.on_event("startup")
+
+# 初始化数据库
 async def init_db():
     """初始化数据库，创建所有的表"""
-    async with async_engine.begin() as connection:
-        await connection.run_sync(SQLModel.metadata.create_all)
+    async with async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as session:
-        try:
+# 获取会话（数据访问）
+async def get_session() -> AsyncSession:
+    """异步生成器，提供数据库会话"""
+    async with async_session_maker() as session:
+        yield session
+
+# （可选）事务支持
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def get_transaction_session():
+    """提供事务范围内的会话"""
+    async with async_session_maker() as session:
+        async with session.begin():
             yield session
-            await session.commit()
-        except:
-            await session.rollback()
-            raise
-

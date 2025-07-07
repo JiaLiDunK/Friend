@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     BASE_URL_ALI: str | None = None
     CODE_MODEL: str | None = None
     API_KEY_ALI: str | None = None
+    LOG_PATH: str | None = None
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
