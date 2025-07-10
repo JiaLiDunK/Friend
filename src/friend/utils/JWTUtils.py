@@ -11,3 +11,5 @@ async def create_access_token(data: dict):
     to_encode.update({"exp":time.time()+settings.ACCESS_TOKEN_EXPIRE_MINUTES})
     encode_jwt = jwt.encode(to_encode,settings.SECRET_KEY,algorithm=settings.ALGORITHM)
     return encode_jwt
+
+
