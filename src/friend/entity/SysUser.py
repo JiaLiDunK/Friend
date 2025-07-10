@@ -12,8 +12,8 @@ class SysUser(SQLModel, table=True):
                          unique=True,
                          autoincrement=True),
     )
-    userName: str
+    user_name: str
     password: str
-    nickName: str
-    createTime: datetime
+    nick_name: str
+    create_time: datetime
     salt: str
