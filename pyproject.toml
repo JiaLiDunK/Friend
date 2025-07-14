@@ -7,11 +7,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "python-jose[cryptography] (>=3.5.0,<4.0.0)",
-    "passlib[bcrypt] (>=1.7.4,<2.0.0)",
-    "python-multipart (>=0.0.20,<0.0.21)"
-]
+
 
 [tool.poetry]
 packages = [{include = "friend", from = "src"}]
@@ -24,6 +20,8 @@ fastapi = "0.115.14"
 PyJWT = "2.10.1"
 loguru = "0.7.3"
 asyncpg = "0.30.0"
+langgraph = "0.5.2"
+PyYAML = "6.0.2"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
