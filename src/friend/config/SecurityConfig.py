@@ -1,9 +1,9 @@
 import jwt
 from fastapi import HTTPException
-from fastapi import status, Request
+from fastapi import status
 from fastapi.params import Depends
 from fastapi.security import OAuth2PasswordBearer
-from starlette.responses import RedirectResponse
+
 from src.friend.config.SettingConfig import settings
 
 oauth = OAuth2PasswordBearer(tokenUrl="/token")

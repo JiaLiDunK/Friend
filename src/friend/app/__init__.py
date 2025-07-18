@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, status, Request
+from fastapi import FastAPI
 from fastapi.params import Depends
 from loguru import logger
-from starlette.responses import RedirectResponse
 
 from src.friend.app.UserRouter import userRouter
 from src.friend.config.SecurityConfig import get_current_user
