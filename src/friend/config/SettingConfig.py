@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     CODE_MODEL: str | None = None
     API_KEY_ALI: str | None = None
     LOG_PATH: str | None = None
+    MILVUS_URL: str | None = None
+    MILVUS_PORT: str | None = None
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
