@@ -21,9 +21,12 @@ PyJWT = "2.10.1"
 loguru = "0.7.3"
 asyncpg = "0.30.0"
 langgraph = "0.5.2"
+langchain-community = "0.3.27"
 crewai = "0.141.0"
 PyYAML = "6.0.2"
 pymilvus = "2.5.12"
+sqlmodel = "0.0.24"
+pytest-asyncio = "1.1.0"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
