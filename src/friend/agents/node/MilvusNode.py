@@ -27,3 +27,5 @@ class MilvusNode:
             output_fields=output_fields
         )
         return results
+    async def search_data_by_ids(self,ids:List[int],output_fields:List[str]):
+        return self.collection.query(expr=f"id in {ids}", output_fields=output_fields)
