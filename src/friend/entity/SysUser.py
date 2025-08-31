@@ -14,6 +14,6 @@ class SysUser(SQLModel, table=True):
     )
     user_name: str
     password: str
-    nick_name: str
     create_time: datetime
     salt: str
+    email: str

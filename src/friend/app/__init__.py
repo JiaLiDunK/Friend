@@ -21,7 +21,7 @@ app = FastAPI(
     deprecation="开始搭建自己的python基础服务",
     lifespan=lifespan,
 )
-app.include_router(userRouter,prefix="/user",tags=["用户"])
+app.include_router(userRouter,prefix="/api/user",tags=["用户"])
 
 
 # 未授权时重定向用户
@@ -41,6 +41,7 @@ app.include_router(userRouter,prefix="/user",tags=["用户"])
 # 测试
 @app.get('/test')
 async def test(current_user: str = Depends(get_current_user)):
+    print("开始1:",current_user)
     return {"message": "Hello, World!::"}
 
 # 测试

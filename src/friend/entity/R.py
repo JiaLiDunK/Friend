@@ -4,24 +4,25 @@ from typing import Dict, Any
 @dataclass
 class R:
     success: bool = None
-    msg: str = None
+    message: str = None
     code: int = None
     data: Dict[str, Any] = field(default_factory=dict)
+    jwt: str = None
 
     @classmethod
-    def success(cls):
-        return cls(success=True, code=200, msg="成功")
+    def ok(cls):
+        return cls(success=True, code=200)
 
     @classmethod
     def error(cls):
-        return cls(success=False, code=500, msg="失败")
+        return cls(success=False, code=500)
 
     def bool_success(self, success: bool):
         self.success = success
         return self
 
-    def message(self, msg: str):
-        self.msg = msg
+    def messages(self, msg: str):
+        self.message = msg
         return self
 
     def code_value(self, code: int):
@@ -34,4 +35,8 @@ class R:
 
     def data_dict(self, data: Dict[str, Any]):
         self.data = data
+        return self
+
+    def jwt_value(self, jwt: str):
+        self.jwt = jwt
         return self

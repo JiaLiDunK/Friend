@@ -16,10 +16,10 @@ userRouter = APIRouter()
 
 class UserRegister(BaseModel):
     """用户注册"""
-    user_name: str
+    name: str
     password: str
-    nick_name: str
-    @field_validator("user_name",'nick_name','password')
+    email: str
+    @field_validator("email",'name','password')
     def check_user_name(cls, v, field):
         if not v or not v.strip():
             raise ValueError(f"用户名:{field}不能为空")
@@ -29,13 +29,18 @@ class UserRegister(BaseModel):
         if length > 20:
             raise ValueError("用户名长度不能超过20个字符")
         return v
+class User(BaseModel):
+    id:int
+    email:str
+    name:str
+    role:str
 
 class UserLogin(BaseModel):
     """用户注册"""
-    user_name: str
+    email: str
     password: str
-    @field_validator("user_name",'password')
-    def check_user_name(cls, v, field):
+    @field_validator("email",'password')
+    def check_email(cls, v, field):
         if not v or not v.strip():
             raise ValueError(f"用户名:{field}不能为空")
         length = len(v.strip())
@@ -47,38 +52,40 @@ class UserLogin(BaseModel):
 
 @userRouter.post("/register")
 async def register(data: UserRegister,
-               userdb: UserDB = Depends(create_user_db)) -> R:
+               user_db: UserDB = Depends(create_user_db)) -> R:
     """注册"""
-    logger.info("用户注册:",data.user_name)
+    logger.info("用户注册:",data.email)
+    return R.error().messages("暂时不支持注册")
     salt = await generate_random_string()
     password = data.password + salt
     password = hashlib.sha256(password.encode("utf-8")).hexdigest()
     users = SysUser(
-        user_name=data.user_name,
+        user_name=data.name,
         password=password,
         salt=salt,
-        nick_name=data.nick_name,
+        email=data.email,
         create_time=datetime.now()
     )
-    result = await userdb.insert_user(users)
-    return R.success().message(result)
+    result = await user_db.insert_user(users)
+    return R.error(result)
 
 @userRouter.post("/login")
 async def login(data: UserLogin,
-                userdb: UserDB = Depends(create_user_db))->R:
+                user_db: UserDB = Depends(create_user_db))->R:
     """登录"""
-    user: SysUser = await userdb.get_by_username(data.user_name)
+    logger.info("登录中:",data.email)
+    user: SysUser = await user_db.get_by_email(data.email)
     if user is None:
-        return R.error().message("用户不存在")
+        return R.error().messages("用户不存在")
     password = data.password + user.salt
     password = hashlib.sha256(password.encode("utf-8")).hexdigest()
     if password != user.password:
-        return R.error().message("密码错误")
+        return R.error().messages("密码错误")
     else:
         jwt = await create_access_token({
-            "user_name": user.user_name,
+            "email": user.email,
             "password": user.password,
             "id": user.id
         })
-        return R.success().data_item("token", jwt)
+        return R.ok().jwt_value(jwt).data_dict(User(id=user.id,email=user.email,name=user.user_name,role="普通"))
 

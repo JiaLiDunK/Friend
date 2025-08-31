@@ -13,17 +13,17 @@ class UserDB:
     async def insert_user(self, user: SysUser) -> str:
         """插入数据"""
         async with self.session.begin():
-            existing_user = await self.get_by_username(user.user_name)
+            existing_user = await self.get_by_email(user.email)
             if existing_user is not None:
                 return "用户已存在"
             else:
                 self.session.add(user)
                 return "注册成功"
 
-    async def get_by_username(self,username: str) -> SysUser:
+    async def get_by_email(self,email: str) -> SysUser:
         """根据用户名查询数据库中是否存在了"""
         statement = select(SysUser).where(
-            SysUser.user_name==username
+            SysUser.email==email
         )
         # 执行查询并获取结果
         result = await self.session.execute(statement)
