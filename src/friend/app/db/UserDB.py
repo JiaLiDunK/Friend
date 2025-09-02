@@ -3,7 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import get_session
-from src.friend.entity.SysUser import SysUser
+from src.friend.entity.po.SysUser import SysUser
 
 
 class UserDB:
