@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.params import Depends
 from loguru import logger
 
+from friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
 from src.friend.config.SecurityConfig import get_current_user
 
@@ -22,7 +23,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(userRouter,prefix="/user",tags=["用户"])
-
+app.include_router(typeRouter,prefix="/type",tags=["类型"])
 
 # 未授权时重定向用户
 # @app.middleware("http")
