@@ -1,9 +1,13 @@
 from fastapi import Depends
+from jsonpickle.util import items
+from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from friend.config.DBConfig import get_session
-from friend.entity.po.SysType import SysType
+from src.friend.config.DBConfig import get_session
+from src.friend.entity.po.SysType import SysType
+from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
 
 
 class TypeDB:
@@ -24,9 +28,31 @@ class TypeDB:
     async def get_type_name(self,type_name: str):
         """根据类型名字查看是否存在"""
         statement = select(SysType).where(SysType.type_name==type_name)
-        result = await self.session.execute(statement)
+        result = await self.session.exec(statement)
         data = result.first()
-        return data[0] if data else None
+        return data if data else None
+
+    async def get_type_list(self,data: QueryTable):
+        """根据参数查询数据库"""
+        async with self.session.begin():
+            statement = select(SysType)
+            count_statement = select(func.count()).select_from(SysType)
+            # 动态拼接查询条件
+            if data.keywords:
+                statement = statement.where(SysType.type_name.like(f"%{data.keywords}%"))
+                count_statement = count_statement.where(SysType.type_name.like(f"%{data.keywords}%"))
+            statement = statement.limit(data.page_num).offset(data.pagesize)
+            result = await self.session.exec(statement)
+            total = await self.session.exec(count_statement)
+            item = result.all()
+            count = total.one()
+            return TableData[SysType](total=count,items=item)
+    async def update_type(self,type_data: SysType):
+        """修改数据"""
+        async with self.session.begin():
+            statement = update(SysType).where(SysType.id==type_data.id).values(type_name=type_data.type_name)
+            await self.session.exec(statement)
+
 
 # 工厂函数
 async def create_type_db(session: AsyncSession=Depends(get_session)) -> TypeDB:

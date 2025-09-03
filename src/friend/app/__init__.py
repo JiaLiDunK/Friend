@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.params import Depends
 from loguru import logger
 
-from friend.app.TypeRouter import typeRouter
+from src.friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
 from src.friend.config.SecurityConfig import get_current_user
 
