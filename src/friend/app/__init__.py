@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.params import Depends
 from loguru import logger
+from starlette.middleware.cors import CORSMiddleware
 
 from src.friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
@@ -22,6 +23,20 @@ app = FastAPI(
     deprecation="开始搭建自己的python基础服务",
     lifespan=lifespan,
 )
+# 配置容许的前端域名
+origins = [
+    'http://127.0.0.1:7000',
+    'http://localhost:7000'
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 app.include_router(userRouter,prefix="/user",tags=["用户"])
 app.include_router(typeRouter,prefix="/type",tags=["类型"])
 

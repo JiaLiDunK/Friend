@@ -12,7 +12,8 @@ typeRouter = APIRouter()
 async def get_type_list(data: QueryTable,
                         type_db: TypeDB = Depends(create_type_db)):
     logger.info(f"查询的参数{data}")
-    return await type_db.get_type_list(data)
+    data = await type_db.get_type_list(data)
+    return R.ok().messages("查询成功").data_dict(data)
 
 @typeRouter.post("/insertType")
 async def insert_type(data: SysType,

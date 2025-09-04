@@ -41,11 +41,12 @@ class TypeDB:
             if data.keywords:
                 statement = statement.where(SysType.type_name.like(f"%{data.keywords}%"))
                 count_statement = count_statement.where(SysType.type_name.like(f"%{data.keywords}%"))
-            statement = statement.limit(data.page_num).offset(data.pagesize)
+            statement = statement.limit(data.pagesize).offset(data.page_num)
             result = await self.session.exec(statement)
             total = await self.session.exec(count_statement)
             item = result.all()
             count = total.one()
+            print(item)
             return TableData[SysType](total=count,items=item)
     async def update_type(self,type_data: SysType):
         """修改数据"""
