@@ -1,6 +1,10 @@
 from fastapi import Depends
+from sqlalchemy import func, update, values
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from friend.entity.vo.QueryTable import QueryTable
+from friend.entity.vo.TableData import TableData
 from src.friend.config.DBConfig import get_session
 from src.friend.entity.po.MessagePrompt import MessagePrompt
 
@@ -14,7 +18,26 @@ class PromptDB:
         async with self.session.begin():
             self.session.add(data)
             return "添加成功"
-
+    async def get_list(self,data: QueryTable):
+        """获取书籍"""
+        async with self.session.begin():
+            statement = select(MessagePrompt)
+            count_statement = select(func.count()).select_from(MessagePrompt)
+            # 动态拼接查询条件
+            if data.keywords:
+                statement = statement.where(MessagePrompt.system_message.like(f"%{data.keywords}%"))
+                count_statement = count_statement.where(MessagePrompt.system_message.like(f"%{data.keywords}%"))
+            statement = statement.limit(data.pagesize).offset(data.page_num)
+            result = await self.session.exec(statement)
+            total = await self.session.exec(count_statement)
+            item = result.all()
+            count = result.one()
+            return TableData[MessagePrompt](total=count,items=item)
+    async def update_data(self,data:MessagePrompt):
+        """根据id修改数据"""
+        async with self.session.begin():
+            statement = update(MessagePrompt).where(MessagePrompt.id==data.id).values(type_id=data.type_id,system_message=data.system_message,description=data.description)
+            await self.session.exec(statement)
 
 
 #工厂函数
