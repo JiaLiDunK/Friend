@@ -3,8 +3,8 @@ from typing import List
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from friend.config.DBConfig import get_session
-from friend.entity.po.Chunk import Chunk
+from src.friend.config.DBConfig import get_session
+from src.friend.entity.po.Chunk import Chunk
 
 
 class ChunkDB:

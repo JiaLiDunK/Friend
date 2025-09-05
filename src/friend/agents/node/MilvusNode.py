@@ -11,7 +11,9 @@ class MilvusNode:
         self.collection = Collection(collection_name)
         self.rag_node = RagNode()
 
+
     async def insert_into_data(self, data):
+        """插入数据"""
         self.collection.insert(data)
 
 

@@ -9,9 +9,9 @@ import asyncio
 from openpyxl.styles.builtins import title
 from sympy import content
 
-from friend.entity.po.Books import Books
-from friend.entity.po.Chunk import Chunk
-from friend.utils.StringUtils import load_chunk_document_pdf
+from src.friend.entity.po.Books import Books
+from src.friend.entity.po.Chunk import Chunk
+from src.friend.utils.StringUtils import load_chunk_document
 
 def split_all_files_in_dir(dir_path, parts=10):
     """遍历目录，把文件均分到 parts 份"""
@@ -35,16 +35,11 @@ def split_all_files_in_dir(dir_path, parts=10):
         arr[idx % parts].append(file)
 
     return arr
-async def task(name, sec):
-    print(f"开始任务 {name}")
-    await asyncio.sleep(sec)
-    print(f"完成任务 {name}")
-    return f"结果-{name}"
+
 async def read_and_save(paths:List[str]):
     for path in paths:
         sole_id = uuid.uuid4()
-        print(sole_id)
-        docs = await load_chunk_document_pdf(path,
+        docs = await load_chunk_document(path,
         chunk_size=612,
         chunk_overlap=100,
         separators=[
@@ -59,39 +54,19 @@ async def read_and_save(paths:List[str]):
 ])
         filename = os.path.basename(path)
         book = Books(title=filename,uuid=sole_id,type_id=0)
-        chunk_list = List[Chunk]
+        chunk_list:List[Chunk] = []
         i = 1
-        # for doc in docs:
-        #     chunk = Chunk(content=doc.page_content,order_id=i,title_id=1,uuid=sole_id,type_id=2)
-        #     chunk_list.append(chunk)
+        for doc in docs:
+            chunk = Chunk(content=doc.page_content,order_id=i,title_id=1,uuid=sole_id,type_id=2)
+            chunk_list.append(chunk)
         print(book)
-
-
-async def read_one(path:str):
-    docs = await load_chunk_document_pdf(path,
-                                         chunk_size=612,
-                                         chunk_overlap=100,
-                                         separators=[
-                                             "\n\n",  # 段落
-                                             "\n",  # 单换行
-                                             "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
-                                             ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
-                                             "，", ",",  # 中文、英文逗号
-                                             "：", ":",  # 中文、英文冒号
-                                             " ",  # 空格
-                                             ""  # 最后兜底（强制切割）
-                                         ])
-    filename = os.path.basename(path)
-    book = Books(title=filename, uuid="6789098765", type_id=0)
-    chunk_list:List[Chunk] = []
-    i = 1
-    for doc in docs:
-        chunk = Chunk(content=doc.page_content,order_id=i,title_id=1,uuid="4567890",type_id=2)
-        print(doc.page_content)
-        print("================")
-        chunk_list.append(chunk)
-    print(chunk_list)
-
+        print("=================")
+        print(chunk_list)
+async def task(name, sec):
+    print(f"开始任务 {name}")
+    await asyncio.sleep(sec)
+    print(f"完成任务 {name}")
+    return f"结果-{name}"
 
 
 async def main():
@@ -105,7 +80,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    directory = r"D:\资料\pdf\【华为】Java岗面试真题.pdf"  # 换成你的目录
-    # arr = split_all_files_in_dir(directory)
-    # asyncio.run(read_and_save(arr[1]))
-    asyncio.run(read_one(directory))
+    directory = r"D:\学习\文档"  # 换成你的目录
+    arr = split_all_files_in_dir(directory)
+    arr_all = []
+    for i in arr:
+        for j in i:
+            arr_all.append(j)
+    asyncio.run(read_and_save(arr_all))

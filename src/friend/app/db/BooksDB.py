@@ -1,8 +1,8 @@
 from fastapi.params import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from friend.config.DBConfig import get_session
-from friend.entity.po.Books import Books
+from src.friend.config.DBConfig import get_session
+from src.friend.entity.po.Books import Books
 
 
 class BooksDB:
