@@ -3,10 +3,10 @@ import logging
 from fastapi import APIRouter
 from fastapi.params import Depends
 
-from friend.app.db.PromptDB import PromptDB, create_prompt_db
-from friend.entity.R import R
-from friend.entity.po.MessagePrompt import MessagePrompt
-from friend.entity.vo.QueryTable import QueryTable
+from src.friend.app.db.PromptDB import PromptDB, create_prompt_db
+from src.friend.entity.R import R
+from src.friend.entity.po.MessagePrompt import MessagePrompt
+from src.friend.entity.vo.QueryTable import QueryTable
 
 messagePromptRouter = APIRouter()
 
