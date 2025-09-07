@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import uuid
 from typing import List
@@ -7,7 +8,7 @@ from src.friend.app.db.BooksDB import create_books_db
 from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
-from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document
+from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document, clean_text
 
 
 class ReadNode:
@@ -26,6 +27,7 @@ class ReadNode:
         tasks = [asyncio.create_task(self.read_and_save(paths)) for paths in arr]
         # 等待任务完成
         await asyncio.gather(*tasks)
+        logging.info("读取完成")
 
 
     async def read_and_save(self,paths: List[str]):
@@ -33,26 +35,33 @@ class ReadNode:
         books_db = await create_books_db()
         chunk_db = await create_chunk_db()
         for path in paths:
-            sole_id = str(uuid.uuid4())
-            docs = await load_chunk_document(path,
-                                             chunk_size=612,
-                                             chunk_overlap=100,
-                                             separators=[
-                                                 "\n\n",  # 段落
-                                                 "\n",  # 单换行
-                                                 "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
-                                                 ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
-                                                 "，", ",",  # 中文、英文逗号
-                                                 "：", ":",  # 中文、英文冒号
-                                                 " ",  # 空格
-                                                 ""  # 最后兜底（强制切割）
-                                             ])
-            filename = os.path.basename(path)
-            book = Books(title=filename, uuid=sole_id, type_id=0)
-            await books_db.insert_data(book)
-            chunk_list: List[Chunk] = []
-            i = 1
-            for doc in docs:
-                chunk = Chunk(content=doc.page_content, order_id=i, title_id=1, uuid=sole_id, type_id=2)
-                chunk_list.append(chunk)
-            await chunk_db.insert_list(chunk_list)
+            try:
+                sole_id = str(uuid.uuid4())
+                docs = await load_chunk_document(path,
+                                                 chunk_size=612,
+                                                 chunk_overlap=100,
+                                                 separators=[
+                                                     "\n\n",  # 段落
+                                                     "\n",  # 单换行
+                                                     "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
+                                                     ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
+                                                     "，", ",",  # 中文、英文逗号
+                                                     "：", ":",  # 中文、英文冒号
+                                                     " ",  # 空格
+                                                     ""  # 最后兜底（强制切割）
+                                                 ])
+                filename = os.path.basename(path)
+                logging.info(f"开始处理文件: {filename}, uuid={sole_id}")
+                book = Books(tittle=filename, uuid=sole_id, type_id=0)
+                await books_db.insert_data(book)
+                logging.info(f"插入 Book: {filename}")
+                chunk_list: List[Chunk] = []
+                i = 1
+                for doc in docs:
+                    safe_content = await clean_text(doc.page_content)
+                    chunk = Chunk(content=safe_content, order_id=i, tittle_id=1, uuid=sole_id, type_id=2)
+                    chunk_list.append(chunk)
+                await chunk_db.insert_list(chunk_list)
+                logging.info(f"插入 {len(chunk_list)} 个 Chunks (文件: {filename})")
+            except Exception as e:
+                logging.error(f"处理文件失败: {path}, 错误: {e}", exc_info=True)

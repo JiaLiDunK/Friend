@@ -10,6 +10,6 @@ class Books(SQLModel,table=True):
                          unique=True,
                          autoincrement=True),
     )
-    title:str
+    tittle:str
     uuid:str
     type_id:int

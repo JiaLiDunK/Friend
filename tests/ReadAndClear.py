@@ -1,9 +1,9 @@
 import uuid
 from typing import List
 
-from friend.agents.node.ReadNode import ReadNode
-from friend.app.db.BooksDB import create_books_db
-from friend.app.db.ChunkDB import create_chunk_db
+
+from src.friend.app.db.BooksDB import create_books_db
+from src.friend.app.db.ChunkDB import create_chunk_db
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
@@ -14,6 +14,7 @@ from sympy import content
 
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.utils import StringUtils
 from src.friend.utils.StringUtils import load_chunk_document
 
 def split_all_files_in_dir(dir_path, parts=10):
@@ -73,14 +74,24 @@ async def task(name, sec):
 
 
 async def main():
-    books_db = await create_books_db()
-    chunk_db = await create_chunk_db()
-    reading = ReadNode(chunk_db, books_db)
-    await reading.read_path(r"D:\腰椎\demo1")
+    directory = r"D:\测试资料\资料\1、Java基础面试题-91道.pdf"  # 换成你的目录
+    docs = await StringUtils.load_chunk_document(directory,chunk_size=612,
+        chunk_overlap=100,
+        separators=[
+        "\n\n",  # 段落
+        "\n",  # 单换行
+        "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
+        ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
+        "，", ",",  # 中文、英文逗号
+        "：", ":",  # 中文、英文冒号
+        " ",  # 空格
+        ""  # 最后兜底（强制切割）
+])
+    print(docs[len(docs) - 2].page_content)
+    print(docs[len(docs)-1].page_content)
 
 
 if __name__ == "__main__":
-    directory = r"D:\腰椎\demo1"  # 换成你的目录
 
     asyncio.run(main())
 

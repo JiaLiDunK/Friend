@@ -4,9 +4,12 @@ import random
 import re
 import string
 from typing import List
-
+import pdfplumber
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredWordDocumentLoader
+from langchain.docstore.document import Document
+from pdfplumber.utils.exceptions import PdfminerException
+from unstructured.partition.pdf import partition_pdf
 
 
 async def generate_random_string(length=8):
@@ -23,20 +26,23 @@ async def remove_whitespace_list(text: List[str]) -> List[str]:
     return await asyncio.gather(*(remove_whitespace(t) for t in text))
 
 
-async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, separators: List[str]):
+async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, separators: list):
     """根据文件后缀名加载并切割文档"""
     ext = os.path.splitext(path)[1].lower()  # 获取后缀名
-    # 根据文件类型选择 loader
     if ext == ".pdf":
-        loader = PyPDFLoader(path)
+        # 尝试用 pdfplumber 提取文本
+        text = await extract_text_pdf_safe(path)
+        documents = [Document(page_content=text)]
+
     elif ext in [".doc", ".docx"]:
         loader = UnstructuredWordDocumentLoader(path)
+        documents = loader.load()
+
     elif ext in [".txt", ".md"]:
         loader = TextLoader(path, encoding="utf-8")
+        documents = loader.load()
     else:
         raise ValueError(f"暂不支持的文件类型: {ext}")
-    # 加载文档
-    documents = loader.load()
     # 定义切割器
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -46,6 +52,44 @@ async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, se
     # 切割文档
     docs = text_splitter.split_documents(documents)
     return docs
+
+
+async def extract_text_pdf_safe(path: str) -> str:
+    """
+    安全提取 PDF 文本：
+    - 优先使用 pdfplumber 提取
+    - 若报错或异常字体，使用 OCR 提取
+    """
+    text = ""
+    try:
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                try:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
+                except PdfminerException:
+                    # 当前页字体异常，跳过
+                    continue
+
+        # 如果 pdfplumber 提取为空，走 OCR
+        if not text.strip():
+            text = await extract_text_pdf_ocr(path)
+
+    except Exception:
+        # pdfplumber 打开失败，走 OCR
+        text = await extract_text_pdf_ocr(path)
+
+    return text
+
+
+async def extract_text_pdf_ocr(path: str) -> str:
+    """
+    使用 OCR 提取 PDF 文本（unstructured）
+    """
+    elements = partition_pdf(filename=path, strategy="ocr_only")
+    text = "\n".join([el.text for el in elements if el.text])
+    return text
 async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[str]]:
     """
     遍历目录，把文件路径均分到 parts 份
@@ -68,3 +112,21 @@ async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[st
     for i, file_path in enumerate(all_files):
         result[i % parts].append(file_path)
     return result
+async def clean_text(text: str) -> str:
+    """
+    清理掉 PostgreSQL UTF8 不允许的字符:
+    - NULL (\x00)
+    - 非法 surrogate 字符 (\ud800-\udfff)
+    - 其他控制字符 (0x01–0x1F, 0x7F)，但保留 \n 和 \t
+    """
+    if not isinstance(text, str):
+        return text
+    # 去掉 NULL
+    text = text.replace("\x00", "")
+    # 去掉 surrogate 范围
+    text = re.sub(r"[\ud800-\udfff]", "", text)
+    # 去掉不可见控制符 (除了 \n \t)
+    text = re.sub(r"[\x01-\x08\x0B-\x0C\x0E-\x1F\x7F]", "", text)
+    # 去掉多余空白
+    text = re.sub(r"[ \t]+", " ", text)
+    return text.strip()
