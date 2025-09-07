@@ -3,7 +3,6 @@ import os
 import uuid
 from typing import List
 
-
 from src.friend.app.db.BooksDB import create_books_db
 from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.entity.po.Books import Books
@@ -34,7 +33,7 @@ class ReadNode:
         books_db = await create_books_db()
         chunk_db = await create_chunk_db()
         for path in paths:
-            sole_id = uuid.uuid4()
+            sole_id = str(uuid.uuid4())
             docs = await load_chunk_document(path,
                                              chunk_size=612,
                                              chunk_overlap=100,

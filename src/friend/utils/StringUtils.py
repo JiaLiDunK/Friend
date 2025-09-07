@@ -1,11 +1,13 @@
 import asyncio
-import random
-import string
-import re
 import os
+import random
+import re
+import string
 from typing import List
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredWordDocumentLoader
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredWordDocumentLoader
+
 
 async def generate_random_string(length=8):
     """生成随机字符串"""

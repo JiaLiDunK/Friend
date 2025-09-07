@@ -1,5 +1,5 @@
 from fastapi import Depends
-from sqlalchemy import func, update, values
+from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 

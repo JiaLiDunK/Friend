@@ -1,6 +1,9 @@
 import uuid
 from typing import List
 
+from friend.agents.node.ReadNode import ReadNode
+from friend.app.db.BooksDB import create_books_db
+from friend.app.db.ChunkDB import create_chunk_db
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
@@ -70,20 +73,20 @@ async def task(name, sec):
 
 
 async def main():
-    # 并发执行多个任务
-    tasks = [asyncio.create_task(task(f"T{i}", i)) for i in range(1, 6)]
-
-    # 等待所有任务完成
-    results = await asyncio.gather(*tasks)
-    print("所有结果:", results)
-
+    books_db = await create_books_db()
+    chunk_db = await create_chunk_db()
+    reading = ReadNode(chunk_db, books_db)
+    await reading.read_path(r"D:\腰椎\demo1")
 
 
 if __name__ == "__main__":
-    directory = r"D:\学习\文档"  # 换成你的目录
-    arr = split_all_files_in_dir(directory)
-    arr_all = []
-    for i in arr:
-        for j in i:
-            arr_all.append(j)
-    asyncio.run(read_and_save(arr_all))
+    directory = r"D:\腰椎\demo1"  # 换成你的目录
+
+    asyncio.run(main())
+
+    # arr = split_all_files_in_dir(directory)
+    # arr_all = []
+    # for i in arr:
+    #     for j in i:
+    #         arr_all.append(j)
+    # asyncio.run(read_and_save(arr_all))

@@ -1,5 +1,4 @@
 from fastapi import Depends
-from jsonpickle.util import items
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession

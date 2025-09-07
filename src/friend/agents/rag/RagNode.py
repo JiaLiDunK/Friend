@@ -1,5 +1,5 @@
 from typing import List
-import re
+
 from langchain_ollama import OllamaEmbeddings
 
 

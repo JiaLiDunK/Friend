@@ -13,5 +13,5 @@ class Chunk(SQLModel,table=True):
     content:str
     order_id:int
     title_id:int
-    uuid:int
+    uuid:str
     type_id:int
