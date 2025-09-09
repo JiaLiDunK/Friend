@@ -45,7 +45,6 @@ class TypeDB:
             total = await self.session.exec(count_statement)
             item = result.all()
             count = total.one()
-            print(item)
             return TableData[SysType](total=count,items=item)
     async def update_type(self,type_data: SysType):
         """修改数据"""
