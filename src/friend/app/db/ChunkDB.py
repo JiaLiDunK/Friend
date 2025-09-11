@@ -1,7 +1,11 @@
 from typing import List
 
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import func, update
 
+from src.friend.entity.vo.TableData import TableData
+from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.Chunk import Chunk
 
@@ -14,6 +18,23 @@ class ChunkDB:
         """批量插入数据"""
         async with self.session.begin():
             self.session.add_all(data_list)
+
+    async def get_data_list(self,data:QueryTable):
+        """根据uuid获取数据"""
+        async with self.session.begin():
+            statement = select(Chunk).where(Chunk.uuid==data.keywords).order_by(Chunk.order_id).limit(data.pagesize).offset(data.page_num)
+            count_statement = select(func.count()).select_from(Chunk).where(Chunk.uuid==data.keywords)
+            result = await self.session.exec(statement)
+            total = await self.session.exec(count_statement)
+            item = result.all()
+            count = total.one()
+            return TableData[Chunk](total=count,items=item)
+    async def update_data(self,data:Chunk):
+        """更新数据"""
+        async with self.session.begin():
+            statement = update(Chunk).where(Chunk.id==data.id).values(content=data.content,type_id=data.type_id)
+            await self.session.exec(statement)
+
 
 # 工厂函数（业务内部调用用这个）
 async def create_chunk_db() -> ChunkDB:

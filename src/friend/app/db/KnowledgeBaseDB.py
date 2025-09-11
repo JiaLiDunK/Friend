@@ -21,7 +21,7 @@ class KnowledgeBaseDB:
     async def update_data(self,data:KnowledgeBase):
         """修改书籍"""
         async with self.session.begin():
-            statement = update(KnowledgeBase).where(KnowledgeBase.id==data.id).values(collection_remark=data.collection_remark).values(data_base_remark=data.data_base_remark).values(collection=data.collection).values(data_base=data.data_base).values(data_base_type=data.data_base_type)
+            statement = update(KnowledgeBase).where(KnowledgeBase.id==data.id).values(collection_remark=data.collection_remark,data_base_remark=data.data_base_remark,collection=data.collection,data_base=data.data_base,data_base_type=data.data_base_type)
             await self.session.exec(statement)
 
     async def get_list(self,data:QueryTable):
