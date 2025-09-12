@@ -3,7 +3,7 @@ from sqlmodel import SQLModel, Field, Column
 
 
 
-class MessagePrompt(SQLModel):
+class MessagePrompt(SQLModel,table=True):
     __tablename__ = "message_prompt"
     id: int = Field(
         sa_column=Column(postgresql.INTEGER,

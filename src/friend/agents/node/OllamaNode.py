@@ -11,8 +11,15 @@ class OllamaNode:
             model=model_name,
         )
 
-    async def unlimited_chat_ollama(self, system_message:str):
-        # self.ollama_obliterated.invoke()
-        pass
-    async def chat_ollama(self, system_message:str):
-        pass
+    async def unlimited_chat_ollama(self, system_message:str,user_message:str):
+        """访问的是无限制的大模型"""
+        prompt = [
+            system_message,user_message
+        ]
+        return await self.ollama_obliterated.ainvoke(prompt)
+    async def chat_ollama(self, system_message:str,user_message:str):
+        """访问的是有限制的大模型"""
+        prompt = [
+            system_message, user_message
+        ]
+        return await self.ollama.ainvoke(prompt)

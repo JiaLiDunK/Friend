@@ -1,5 +1,7 @@
 import logging
+
 from fastapi import APIRouter, Depends
+
 from src.friend.app.db.TypeDB import create_type_db, TypeDB
 from src.friend.entity.R import R
 from src.friend.entity.po.SysType import SysType

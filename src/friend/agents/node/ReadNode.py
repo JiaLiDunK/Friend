@@ -52,7 +52,14 @@ class ReadNode:
                                                  ])
                 filename = os.path.basename(path)
                 logging.info(f"开始处理文件: {filename}, uuid={sole_id}")
-                book = Books(tittle=filename, uuid=sole_id, type_id=0)
+                # 默认 type_id = 4
+                type_id = 4
+                # 如果 docs 太少，就改 type_id
+                if not docs:
+                    type_id = 5  # 你需要的 type_id 值
+                elif len(docs) < 2:
+                    type_id = 6
+                book = Books(tittle=filename, uuid=sole_id, type_id=type_id)
                 await books_db.insert_data(book)
                 logging.info(f"插入 Book: {filename}")
                 chunk_list: List[Chunk] = []
@@ -61,6 +68,7 @@ class ReadNode:
                     safe_content = await clean_text(doc.page_content)
                     chunk = Chunk(content=safe_content, order_id=i, tittle_id=1, uuid=sole_id, type_id=2)
                     chunk_list.append(chunk)
+                    i += 1
                 await chunk_db.insert_list(chunk_list)
                 logging.info(f"插入 {len(chunk_list)} 个 Chunks (文件: {filename})")
             except Exception as e:

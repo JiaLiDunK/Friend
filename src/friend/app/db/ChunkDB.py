@@ -1,13 +1,13 @@
 from typing import List
 
+from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import func, update
 
-from src.friend.entity.vo.TableData import TableData
-from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
 
 
 class ChunkDB:

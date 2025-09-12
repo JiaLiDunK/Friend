@@ -1,6 +1,9 @@
 import uuid
 from typing import List
 
+import ebooklib
+from bs4 import BeautifulSoup
+from ebooklib import epub
 
 from src.friend.app.db.BooksDB import create_books_db
 from src.friend.app.db.ChunkDB import create_chunk_db
@@ -74,7 +77,7 @@ async def task(name, sec):
 
 
 async def main():
-    directory = r"D:\测试资料\资料\1、Java基础面试题-91道.pdf"  # 换成你的目录
+    directory = r"D:\测试资料\book\pua\极限话术 - 死囚漫步.epub" # 换成你的目录
     docs = await StringUtils.load_chunk_document(directory,chunk_size=612,
         chunk_overlap=100,
         separators=[
@@ -87,12 +90,23 @@ async def main():
         " ",  # 空格
         ""  # 最后兜底（强制切割）
 ])
-    print(docs[len(docs) - 2].page_content)
-    print(docs[len(docs)-1].page_content)
+    for doc in docs:
+        print(len(doc.page_content))
+        print("============")
+        print(doc)
 
 
 if __name__ == "__main__":
-
+    # book_path = r"D:\测试资料\book\pua\魔鬼约会学 - 魔鬼咨询师.epub"
+    # # 载入电子书
+    # book = epub.read_epub(book_path)
+    # # 解析
+    # # spine 里是章节的顺序
+    # for item_id, _ in book.spine:
+    #     item = book.get_item_with_id(item_id)
+    #     if item and item.get_type() == ebooklib.ITEM_DOCUMENT:  # 注意这里
+    #         soup = BeautifulSoup(item.get_content(), "html.parser")
+    #         print(soup.get_text())  # 打印前 200 字
     asyncio.run(main())
 
     # arr = split_all_files_in_dir(directory)

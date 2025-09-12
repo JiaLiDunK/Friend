@@ -3,10 +3,10 @@ from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.friend.entity.vo.QueryTable import QueryTable
-from src.friend.entity.vo.TableData import TableData
 from src.friend.config.DBConfig import get_session
 from src.friend.entity.po.MessagePrompt import MessagePrompt
+from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
 
 
 class PromptDB:
@@ -15,6 +15,8 @@ class PromptDB:
 
     async def insert_data(self,data: MessagePrompt):
         """插入数据"""
+        # type_id = 2先默认是2
+        data.type_id = 2
         async with self.session.begin():
             self.session.add(data)
             return "添加成功"
@@ -31,7 +33,7 @@ class PromptDB:
             result = await self.session.exec(statement)
             total = await self.session.exec(count_statement)
             item = result.all()
-            count = result.one()
+            count = total.one()
             return TableData[MessagePrompt](total=count,items=item)
     async def update_data(self,data:MessagePrompt):
         """根据id修改数据"""

@@ -1,8 +1,8 @@
 import logging
 
-from fastapi import APIRouter, Depends
-from src.friend.entity.vo.QueryTable import QueryTable
+from fastapi import APIRouter
 
+from src.friend.entity.vo.QueryTable import QueryTable
 
 knowledgeBaseRouter = APIRouter()
 

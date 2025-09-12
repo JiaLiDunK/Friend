@@ -1,11 +1,11 @@
 from fastapi import Depends
+from friend.entity.po.KnowledgeBase import KnowledgeBase
+from friend.entity.vo.QueryTable import QueryTable
+from friend.entity.vo.TableData import TableData
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from friend.entity.po.KnowledgeBase import KnowledgeBase
-from friend.entity.vo.QueryTable import QueryTable
-from friend.entity.vo.TableData import TableData
 from src.friend.config.DBConfig import get_session
 
 

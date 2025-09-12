@@ -1,16 +1,19 @@
 import asyncio
+import logging
 import os
 import random
 import re
 import string
 from typing import List
-import pdfplumber
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredWordDocumentLoader
-from langchain.docstore.document import Document
-from pdfplumber.utils.exceptions import PdfminerException
-from unstructured.partition.pdf import partition_pdf
 
+import ebooklib
+import pdfplumber
+from bs4 import BeautifulSoup
+from ebooklib import epub
+from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader, UnstructuredWordDocumentLoader
+from pdfplumber.utils.exceptions import PdfminerException
 
 async def generate_random_string(length=8):
     """生成随机字符串"""
@@ -33,16 +36,25 @@ async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, se
         # 尝试用 pdfplumber 提取文本
         text = await extract_text_pdf_safe(path)
         documents = [Document(page_content=text)]
-
     elif ext in [".doc", ".docx"]:
         loader = UnstructuredWordDocumentLoader(path)
         documents = loader.load()
-
     elif ext in [".txt", ".md"]:
         loader = TextLoader(path, encoding="utf-8")
         documents = loader.load()
+    elif ext == ".epub":
+        book = epub.read_epub(path)
+        documents = []
+        # 解析
+        for item in book.get_items():
+            if item.get_type() == ebooklib.ITEM_DOCUMENT:
+                soup = BeautifulSoup(item.get_content(), "html.parser")
+                text = soup.get_text().strip()
+                if text:
+                    documents.append(Document(page_content=text))
     else:
-        raise ValueError(f"暂不支持的文件类型: {ext}")
+        logging.info(f"暂时无法处理文件:{ext}")
+        documents = []
     # 定义切割器
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -52,7 +64,6 @@ async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, se
     # 切割文档
     docs = text_splitter.split_documents(documents)
     return docs
-
 
 async def extract_text_pdf_safe(path: str) -> str:
     """
@@ -71,25 +82,14 @@ async def extract_text_pdf_safe(path: str) -> str:
                 except PdfminerException:
                     # 当前页字体异常，跳过
                     continue
-
-        # 如果 pdfplumber 提取为空，走 OCR
+        # 如果 pdfplumber 提取为空，走 OCR ,主动放弃
         if not text.strip():
-            text = await extract_text_pdf_ocr(path)
-
+            text = ""
     except Exception:
-        # pdfplumber 打开失败，走 OCR
-        text = await extract_text_pdf_ocr(path)
-
+        # pdfplumber 打开失败，走 OCR,主动放弃
+        text = ""
     return text
 
-
-async def extract_text_pdf_ocr(path: str) -> str:
-    """
-    使用 OCR 提取 PDF 文本（unstructured）
-    """
-    elements = partition_pdf(filename=path, strategy="ocr_only")
-    text = "\n".join([el.text for el in elements if el.text])
-    return text
 async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[str]]:
     """
     遍历目录，把文件路径均分到 parts 份

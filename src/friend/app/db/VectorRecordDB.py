@@ -1,9 +1,10 @@
 from fastapi.params import Depends
+from friend.entity.po.VectorRecord import VectorRecord
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from friend.entity.po.VectorRecord import VectorRecord
 from src.friend.config.DBConfig import get_session
+
 
 class VectorRecordDB:
     def __init__(self,session: AsyncSession):
