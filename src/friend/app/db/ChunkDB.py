@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import func, update
+from sqlalchemy import func, update, delete
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -34,8 +34,35 @@ class ChunkDB:
         async with self.session.begin():
             statement = update(Chunk).where(Chunk.id==data.id).values(content=data.content,type_id=data.type_id)
             await self.session.exec(statement)
-
-
+    async def select_all_uuid(self):
+        """查询所有的uuid"""
+        async with self.session.begin():
+            statement = select(Chunk.uuid).distinct()
+            result = await self.session.exec(statement)
+            return result.all()
+    async def del_uuid(self,uuid:str):
+        """根据uuid删除"""
+        async with self.session.begin():
+            statement = delete(Chunk).where(Chunk.uuid==uuid)
+            await self.session.exec(statement)
+    async def get_data_uuid(self,uuid:str):
+        """根据uuid获取所有的内容"""
+        async with self.session.begin():
+            statement = select(Chunk).where(Chunk.uuid==uuid)
+            result = await self.session.exec(statement)
+            return result.all()
+    async def update_data_list(self,data_list:List[Chunk]):
+        """批量修改内容"""
+        async with self.session.begin():
+            for data in data_list:
+                statement = update(Chunk).where(Chunk.id==data.id).values(content=data.content)
+                await self.session.exec(statement)
+    async def del_data_and_save(self,data_list:List[Chunk],uuid:str):
+        """删除旧数据并保存新数据"""
+        async with self.session.begin():
+            statement = delete(Chunk).where(Chunk.uuid==uuid)
+            await self.session.exec(statement)
+            self.session.add_all(data_list)
 # 工厂函数（业务内部调用用这个）
 async def create_chunk_db() -> ChunkDB:
     async with async_session() as session:

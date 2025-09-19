@@ -77,7 +77,7 @@ async def task(name, sec):
 
 
 async def main():
-    directory = r"D:\测试资料\book\pua\极限话术 - 死囚漫步.epub" # 换成你的目录
+    directory = r"" # 换成你的目录
     docs = await StringUtils.load_chunk_document(directory,chunk_size=612,
         chunk_overlap=100,
         separators=[

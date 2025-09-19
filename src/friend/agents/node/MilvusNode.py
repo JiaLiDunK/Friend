@@ -3,11 +3,12 @@ from typing import List
 from pymilvus import connections, Collection
 
 from src.friend.agents.rag.RagNode import RagNode
+from src.friend.config.SettingConfig import settings
 
 
 class MilvusNode:
     def __init__(self,db_name: str,collection_name: str):
-        connections.connect(host="localhost", port="19530", db_name=db_name)
+        connections.connect(host=settings.MILVUS_URL, port=settings.MILVUS_PORT, db_name=db_name)
         self.collection = Collection(collection_name)
         self.rag_node = RagNode()
 
@@ -15,7 +16,6 @@ class MilvusNode:
     async def insert_into_data(self, data):
         """插入数据"""
         self.collection.insert(data)
-
 
     async def search_data(self,text_list:List[str],output_fields:List[str],top_k:int=5,nprobe:int=10):
         """搜索数据"""
@@ -29,5 +29,7 @@ class MilvusNode:
             output_fields=output_fields
         )
         return results
+
     async def search_data_by_ids(self,ids:List[int],output_fields:List[str]):
+        """跟id查询数据"""
         return self.collection.query(expr=f"id in {ids}", output_fields=output_fields)

@@ -4,7 +4,7 @@ import os
 import random
 import re
 import string
-from typing import List
+from typing import List, Any
 
 import ebooklib
 import pdfplumber
@@ -130,3 +130,59 @@ async def clean_text(text: str) -> str:
     # 去掉多余空白
     text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
+
+async def compress_newlines(texts: str, keep: int = 1, strip_indent: bool = True) -> str:
+    """
+    将多个连续的空白行压缩为指定数量的换行。
+    默认压缩为 1 个 \n，并清理开头和结尾的多余空白行。
+
+    :param texts: 源字符串
+    :param keep: 保留多少个换行符
+    :param strip_indent: 是否去掉每行前面的缩进空格
+    """
+    # 统一换行符
+    texts = texts.replace("\r\n", "\n").replace("\r", "\n")
+    # 压缩多个空白行
+    texts = re.sub(r'[ \t]*\n[ \t]*(\n[ \t]*)+', "\n" * keep, texts)
+    # 去掉开头和结尾的空白行
+    texts = texts.strip("\n \t")
+    if strip_indent:
+        # 去掉每行行首的空格和制表符
+        texts = re.sub(r'^[ \t]+', '', texts, flags=re.MULTILINE)
+    return texts
+
+async def remove_substring(text: str, target: str) -> str:
+    """
+    目前先这样吧,后续可能需要更新
+    删除字符串中指定的子串（精确匹配）
+    """
+    return text.replace(target, "")
+async def chunk_array(arr: List[Any], size: int = 10) -> List[List[Any]]:
+    """
+    将数组均分成指定大小的二维数组（最后一组可能不足 size 个）
+    :param arr: 原始一维数组
+    :param size: 每组的最大元素个数，默认 10
+    :return: 分块后的二维数组
+    """
+    return [arr[i:i + size] for i in range(0, len(arr), size)]
+
+async def chunk_docs(all_text:str):
+    """重写切割用的方法"""
+    # 定义切割器
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=612,
+        chunk_overlap=100,
+        separators=[
+        "\n\n",  # 段落
+        "\n",  # 单换行
+        "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
+        ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
+        "，", ",",  # 中文、英文逗号
+        "：", ":",  # 中文、英文冒号
+        " ",  # 空格
+        ""  # 最后兜底（强制切割）
+]
+    )
+    # 切割文档
+    docs = text_splitter.split_text(all_text)
+    return docs

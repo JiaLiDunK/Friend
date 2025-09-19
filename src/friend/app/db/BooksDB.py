@@ -38,10 +38,6 @@ class BooksDB:
             statement = update(Books).where(Books.id==data.id).values(tittle=data.tittle,type_id=data.type_id)
             await self.session.exec(statement)
 
-
-
-
-
 # 工厂函数（业务内部调用用这个）
 async def create_books_db() -> BooksDB:
     async with async_session() as session:
