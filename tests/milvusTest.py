@@ -4,7 +4,6 @@ from src.friend.agents.rag.RagNode import RagNode
 
 
 async def main():
-    print("开始")
     # 连接 Milvus 数据库
     connections.connect(host="localhost", port="19530", db_name="test")
     # 初始化 RagNode

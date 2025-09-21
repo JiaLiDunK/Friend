@@ -66,9 +66,6 @@ async def read_and_save(paths:List[str]):
         for doc in docs:
             chunk = Chunk(content=doc.page_content,order_id=i,title_id=1,uuid=sole_id,type_id=2)
             chunk_list.append(chunk)
-        print(book)
-        print("=================")
-        print(chunk_list)
 async def task(name, sec):
     print(f"开始任务 {name}")
     await asyncio.sleep(sec)
@@ -91,9 +88,7 @@ async def main():
         ""  # 最后兜底（强制切割）
 ])
     for doc in docs:
-        print(len(doc.page_content))
-        print("============")
-        print(doc)
+        pass
 
 
 if __name__ == "__main__":

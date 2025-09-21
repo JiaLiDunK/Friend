@@ -1,10 +1,13 @@
+from typing import Optional
+
 import sqlalchemy.dialects.postgresql as postgresql
 from sqlmodel import SQLModel, Field, Column
 
 
 class KnowledgeBase(SQLModel, table=True):
     __tablename__ = "knowledge_base"
-    id: int = Field(
+    id: Optional[int] = Field(
+        default=None,
         sa_column=Column(postgresql.INTEGER,
                          primary_key=True,
                          unique=True,
@@ -14,4 +17,4 @@ class KnowledgeBase(SQLModel, table=True):
     collection: str
     data_base_remark: str
     collection_remark: str
-    data_base_type: int
+    type_id: int

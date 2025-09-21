@@ -3,9 +3,11 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
+from src.friend.app.db.BookVectorsDB import create_book_vectors_db, BookVectorsDB
 from src.friend.app.db.BooksDB import BooksDB, create_books_db
 from src.friend.app.db.ChunkDB import ChunkDB, create_chunk_db
 from src.friend.entity.R import R
+from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.entity.vo.QueryTable import QueryTable
@@ -43,3 +45,14 @@ async def update_chunk(data_list:List[Chunk],chunk_db:ChunkDB=Depends(create_chu
     for data in data_list:
         await chunk_db.update_data(data)
     return R.ok().messages("更新成功")
+
+@booksRouter.post("/putBookVectors")
+async def put_book_vectors(data:Books,book_vectors_db:BookVectorsDB=Depends(create_book_vectors_db),
+                           book_db:BooksDB=Depends(create_books_db))->R:
+    """把书籍进行向量化"""
+    logging.info(f"书籍向量化{data}")
+    book_data = BookVectors(uuid=data.uuid,type_id=8,knowledge_base_id=0)
+    await book_vectors_db.insert_data(book_data)
+    data.type_id = 9
+    await book_db.update_data(data)
+    return R.ok().messages("已推送")

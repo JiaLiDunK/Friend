@@ -36,10 +36,9 @@ class ChunkDB:
             await self.session.exec(statement)
     async def select_all_uuid(self):
         """查询所有的uuid"""
-        async with self.session.begin():
-            statement = select(Chunk.uuid).distinct()
-            result = await self.session.exec(statement)
-            return result.all()
+        statement = select(Chunk.uuid).distinct()
+        result = await self.session.exec(statement)
+        return result.all()
     async def del_uuid(self,uuid:str):
         """根据uuid删除"""
         async with self.session.begin():
@@ -47,16 +46,18 @@ class ChunkDB:
             await self.session.exec(statement)
     async def get_data_uuid(self,uuid:str):
         """根据uuid获取所有的内容"""
-        async with self.session.begin():
-            statement = select(Chunk).where(Chunk.uuid==uuid)
-            result = await self.session.exec(statement)
-            return result.all()
+        statement = select(Chunk).where(Chunk.uuid == uuid)
+        result = await self.session.exec(statement)
+        return result.all()
     async def update_data_list(self,data_list:List[Chunk]):
         """批量修改内容"""
-        async with self.session.begin():
-            for data in data_list:
-                statement = update(Chunk).where(Chunk.id==data.id).values(content=data.content)
-                await self.session.exec(statement)
+        for data in data_list:
+            statement = (
+                update(Chunk)
+                .where(Chunk.id == data.id)
+                .values(content=data.content)
+            )
+            await self.session.exec(statement)
     async def del_data_and_save(self,data_list:List[Chunk],uuid:str):
         """删除旧数据并保存新数据"""
         async with self.session.begin():

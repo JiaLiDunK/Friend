@@ -4,7 +4,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
-from friend.entity.R import R
+from src.friend.entity.R import R
 from src.friend.agents.node.ReadNode import ReadNode
 
 readAndOutRouter = APIRouter()
@@ -35,10 +35,10 @@ async def read_and_out(path: str,
     return R.ok().messages("处理完成")
 
 @readAndOutRouter.post("/repartition")
-async def repartition(uuid:str,
+async def repartition(uuid_list:List[str],
                       reading: ReadNode = Depends(get_read_node)):
     """重新分割指定文件"""
-    await reading.repartition_uuid(uuid)
+    await reading.repartition_uuid(uuid_list)
     return R.ok().messages("重新切割成功")
 
 @readAndOutRouter.post("/clearString")
@@ -50,10 +50,11 @@ async def clear_string(uuid_list:List[str],
     return R.ok().messages("清除完成")
 
 @readAndOutRouter.post("/clearNewlineCharacter")
-async def clear_newline_character(uuid_list:List[str],
+async def clear_newline_character(
         reading: ReadNode = Depends(get_read_node)):
     """清空所有的文件的换行符"""
-    await reading.clear_newline_character(uuid_list)
+    logging.info("清除多余的换行符")
+    await reading.clear_newline_character_task()
     return "清除成功"
 
 @readAndOutRouter.post("/repartitionAll")

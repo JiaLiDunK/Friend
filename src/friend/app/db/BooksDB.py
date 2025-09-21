@@ -26,7 +26,7 @@ class BooksDB:
             if data.keywords:
                 statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
                 count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
-            statement = statement.limit(data.pagesize).offset(data.page_num)
+            statement = statement.limit(data.pagesize).offset(data.page_num).order_by(Books.type_id)
             result = await self.session.exec(statement)
             total = await self.session.exec(count_statement)
             item = result.all()

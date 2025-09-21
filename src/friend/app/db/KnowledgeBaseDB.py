@@ -1,7 +1,7 @@
 from fastapi import Depends
-from friend.entity.po.KnowledgeBase import KnowledgeBase
-from friend.entity.vo.QueryTable import QueryTable
-from friend.entity.vo.TableData import TableData
+from src.friend.entity.po.KnowledgeBase import KnowledgeBase
+from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -21,7 +21,7 @@ class KnowledgeBaseDB:
     async def update_data(self,data:KnowledgeBase):
         """修改书籍"""
         async with self.session.begin():
-            statement = update(KnowledgeBase).where(KnowledgeBase.id==data.id).values(collection_remark=data.collection_remark,data_base_remark=data.data_base_remark,collection=data.collection,data_base=data.data_base,data_base_type=data.data_base_type)
+            statement = update(KnowledgeBase).where(KnowledgeBase.id==data.id).values(collection_remark=data.collection_remark,data_base_remark=data.data_base_remark,collection=data.collection,data_base=data.data_base,type_id=data.type_id)
             await self.session.exec(statement)
 
     async def get_list(self,data:QueryTable):
@@ -39,8 +39,6 @@ class KnowledgeBaseDB:
             item = result.all()
             count = total.one()
             return TableData[KnowledgeBase](total=count,items=item)
-
-
 
 # 工厂函数
 async def create_knowledge_base_db(session: AsyncSession=Depends(get_session)) -> KnowledgeBaseDB:

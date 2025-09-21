@@ -32,10 +32,12 @@ class ReadNode:
         logging.info("清除完成")
     async def clear_string(self,text:str,uuid_list:List[str]):
         """清除指定uuid中的指定内容"""
+        chunk_db = await create_chunk_db()
         for uuids in uuid_list:
            chunk_list = await self.chunk_db.get_data_uuid(uuids)
            for chunk in chunk_list:
-               chunk.content = remove_substring(chunk.content, text)
+               chunk.content = await remove_substring(chunk.content, text)
+           await chunk_db.update_data_list(chunk_list)
     async def repartition_task(self):
         """重新分割所有文件中的内容"""
         logging.info("开始重新分割")

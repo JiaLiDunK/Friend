@@ -140,6 +140,7 @@ async def compress_newlines(texts: str, keep: int = 1, strip_indent: bool = True
     :param keep: 保留多少个换行符
     :param strip_indent: 是否去掉每行前面的缩进空格
     """
+    texts = re.sub(r'[\u200B-\u200D\uFEFF]', '', texts)
     # 统一换行符
     texts = texts.replace("\r\n", "\n").replace("\r", "\n")
     # 压缩多个空白行
