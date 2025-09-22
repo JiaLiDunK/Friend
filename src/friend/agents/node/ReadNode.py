@@ -1,8 +1,9 @@
 import asyncio
-import logging
 import os
 import uuid
 from typing import List
+
+from loguru import logger
 
 from src.friend.app.db.BooksDB import create_books_db
 from src.friend.app.db.ChunkDB import create_chunk_db
@@ -23,13 +24,13 @@ class ReadNode:
         return cls(books_db, chunk_db)
     async  def clear_string_task(self,text:str):
         """清除所有文件中的指定内容"""
-        logging.info("开始清除")
+        logger.info("开始清除")
         data_list = await self.chunk_db.select_all_uuid()
         task_list = await chunk_array(data_list)
         tasks = [asyncio.create_task(self.clear_string(text,task)) for task in task_list]
         # 等待任务完成
         await asyncio.gather(*tasks)
-        logging.info("清除完成")
+        logger.info("清除完成")
     async def clear_string(self,text:str,uuid_list:List[str]):
         """清除指定uuid中的指定内容"""
         chunk_db = await create_chunk_db()
@@ -40,13 +41,13 @@ class ReadNode:
            await chunk_db.update_data_list(chunk_list)
     async def repartition_task(self):
         """重新分割所有文件中的内容"""
-        logging.info("开始重新分割")
+        logger.info("开始重新分割")
         data_list = await self.chunk_db.select_all_uuid()
         task_list = await chunk_array(data_list)
         tasks = [asyncio.create_task(self.repartition_uuid(task)) for task in task_list]
         # 等待任务完成
         await asyncio.gather(*tasks)
-        logging.info("重新分割完成")
+        logger.info("重新分割完成")
     async def repartition_uuid(self,uuid_list:List[str]):
         """重新分割指定uuid文档中的内容"""
         for uuids in uuid_list:
@@ -69,7 +70,7 @@ class ReadNode:
         tasks = [asyncio.create_task(self.read_and_save(paths)) for paths in arr]
         # 等待任务完成
         await asyncio.gather(*tasks)
-        logging.info("读取完成")
+        logger.info("读取完成")
 
     async def read_and_save(self,paths: List[str]):
         """分割保存指定目录下的文本文件"""
@@ -93,7 +94,7 @@ class ReadNode:
                                                      ""  # 最后兜底（强制切割）
                                                  ])
                 filename = os.path.basename(path)
-                logging.info(f"开始处理文件: {filename}, uuid={sole_id}")
+                logger.info(f"开始处理文件: {filename}, uuid={sole_id}")
                 # 默认 type_id = 4
                 type_id = 4
                 # 如果 docs 太少，就改 type_id
@@ -103,7 +104,7 @@ class ReadNode:
                     type_id = 6
                 book = Books(tittle=filename, uuid=sole_id, type_id=type_id)
                 await books_db.insert_data(book)
-                logging.info(f"插入 Book: {filename}")
+                logger.info(f"插入 Book: {filename}")
                 chunk_list: List[Chunk] = []
                 i = 1
                 for doc in docs:
@@ -112,18 +113,18 @@ class ReadNode:
                     chunk_list.append(chunk)
                     i += 1
                 await chunk_db.insert_list(chunk_list)
-                logging.info(f"插入 {len(chunk_list)} 个 Chunks (文件: {filename})")
+                logger.info(f"插入 {len(chunk_list)} 个 Chunks (文件: {filename})")
             except Exception as e:
-                logging.error(f"处理文件失败: {path}, 错误: {e}", exc_info=True)
+                logger.error(f"处理文件失败: {path}, 错误: {e}", exc_info=True)
     async def clear_newline_character_task(self):
         """多线程启动的方法-把所有的内容中的多个\n变成一个"""
-        logging.info("任务启动")
+        logger.info("任务启动")
         data_list = await self.chunk_db.select_all_uuid()
         task_list = await chunk_array(data_list)
         tasks = [asyncio.create_task(self.clear_newline_character(task)) for task in task_list]
         # 等待任务完成
         await asyncio.gather(*tasks)
-        logging.info("任务完成")
+        logger.info("任务完成")
     async def clear_newline_character(self,uuid_list:List[str]):
         """把所有的内容中的多个\n变成一个"""
         # 防止并发复用

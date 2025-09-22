@@ -1,11 +1,14 @@
 from fastapi.params import Depends
-from sqlalchemy import func
-from sqlmodel import select,update
+from sqlalchemy import func, delete
+from sqlmodel import select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import get_session
 from src.friend.entity.po.BookVectors import BookVectors
+from src.friend.entity.po.Books import Books
+from src.friend.entity.vo.BookToVectors import BookToVectors
 from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
 
 
 class BookVectorsDB:
@@ -21,6 +24,35 @@ class BookVectorsDB:
         async with self.session.begin():
             statement = update(BookVectors).where(BookVectors.id==data.id).values(uuid=data.uuid,type_id=data.type_id,knowledge_base_id=data.knowledge_base_id)
             await self.session.exec(statement)
+    async def get_data_list(self,data:QueryTable):
+        """根据条件查询数据"""
+        async with (self.session.begin()):
+            statement = select(Books.tittle,BookVectors.id,BookVectors.uuid,BookVectors.type_id,BookVectors.knowledge_base_id).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            count_statement = select(func.count()).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            # 动态拼接查询条件
+            if data.keywords:
+                statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
+                count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
+            statement = statement.limit(data.pagesize).offset(data.page_num)
+            result = await self.session.exec(statement)
+            total = await self.session.exec(count_statement)
+            item = result.all()
+            count = total.one()
+            items = [dict(row._mapping) for row in item]  # Row 转 dict
+            return TableData[BookToVectors](total=count,items=items)
+    async def del_data(self,data:BookVectors):
+        """根据id删除数据"""
+        async with self.session.begin():
+            statement = delete(BookVectors).where(BookVectors.id==data.id)
+            await self.session.exec(statement)
+    async def get_data_to_ai(self):
+        """获取前一百本书的名称"""
+        async with self.session.begin():
+            statement = select(Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            statement = statement.where(BookVectors.knowledge_base_id != 0).limit(100)
+            result = await self.session.exec(statement)
+            item = result.all()
+            return item
 
 
 

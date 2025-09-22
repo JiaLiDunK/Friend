@@ -1,12 +1,15 @@
+from typing import List
+
 from fastapi import Depends
-from src.friend.entity.po.KnowledgeBase import KnowledgeBase
-from src.friend.entity.vo.QueryTable import QueryTable
-from src.friend.entity.vo.TableData import TableData
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import get_session
+from src.friend.entity.po.KnowledgeBase import KnowledgeBase
+from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
+from src.friend.entity.vo.TypeOptions import TypeOptions
 
 
 class KnowledgeBaseDB:
@@ -38,7 +41,29 @@ class KnowledgeBaseDB:
             total = await self.session.exec(count_statement)
             item = result.all()
             count = total.one()
-            return TableData[KnowledgeBase](total=count,items=item)
+        return TableData[KnowledgeBase](total=count,items=item)
+    async def get_type_options(self):
+        """获取类型选项"""
+        async with self.session.begin():
+            statement = select(KnowledgeBase)
+            result = await self.session.exec(statement)
+            item = result.all()
+        option_list: List[TypeOptions] = [
+            TypeOptions(
+                value= record.id,
+                label= f"{record.data_base_remark}{record.collection_remark}"
+            )
+            for record in item
+        ]
+        return option_list
+    async def get_data_to_ai(self):
+        """获取所有的数据"""
+        async with self.session.begin():
+            statement = select(KnowledgeBase)
+            result = await self.session.exec(statement)
+            item = result.all()
+        return item
+
 
 # 工厂函数
 async def create_knowledge_base_db(session: AsyncSession=Depends(get_session)) -> KnowledgeBaseDB:

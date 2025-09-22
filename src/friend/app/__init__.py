@@ -64,7 +64,6 @@ app.include_router(booksRouter,prefix="/books",tags=["书籍处理"])
 # 测试
 @app.get('/test')
 async def test(current_user: str = Depends(get_current_user)):
-    print("开始1:",current_user)
     return {"message": "Hello, World!::"}
 
 # 测试

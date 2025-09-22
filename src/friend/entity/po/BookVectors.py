@@ -9,6 +9,6 @@ class BookVectors(SQLModel,table=True):
                          unique=True,
                          autoincrement=True),
     )
-    uuid: str
+    uuid: str = Field(foreign_key="books.uuid")
     knowledge_base_id: int
     type_id: int

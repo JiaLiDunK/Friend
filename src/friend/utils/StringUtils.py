@@ -1,11 +1,10 @@
 import asyncio
-import logging
+from loguru import logger
 import os
 import random
 import re
 import string
 from typing import List, Any
-
 import ebooklib
 import pdfplumber
 from bs4 import BeautifulSoup
@@ -14,6 +13,7 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader, UnstructuredWordDocumentLoader
 from pdfplumber.utils.exceptions import PdfminerException
+
 
 async def generate_random_string(length=8):
     """生成随机字符串"""
@@ -53,7 +53,7 @@ async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, se
                 if text:
                     documents.append(Document(page_content=text))
     else:
-        logging.info(f"暂时无法处理文件:{ext}")
+        logger.info(f"暂时无法处理文件:{ext}")
         documents = []
     # 定义切割器
     text_splitter = RecursiveCharacterTextSplitter(

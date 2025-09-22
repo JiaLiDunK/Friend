@@ -1,11 +1,10 @@
-
-import logging
 from typing import List
 
 from fastapi import APIRouter, Depends
+from loguru import logger
 
-from src.friend.entity.R import R
 from src.friend.agents.node.ReadNode import ReadNode
+from src.friend.entity.R import R
 
 readAndOutRouter = APIRouter()
 
@@ -30,7 +29,7 @@ async def get_read_node() -> ReadNode:
 async def read_and_out(path: str,
                        reading: ReadNode = Depends(get_read_node)):
     """读取本机目录下的所有文件"""
-    logging.info(f"读取的路径{path}")
+    logger.info(f"读取的路径{path}")
     await reading.read_path(path)
     return R.ok().messages("处理完成")
 
@@ -53,7 +52,7 @@ async def clear_string(uuid_list:List[str],
 async def clear_newline_character(
         reading: ReadNode = Depends(get_read_node)):
     """清空所有的文件的换行符"""
-    logging.info("清除多余的换行符")
+    logger.info("清除多余的换行符")
     await reading.clear_newline_character_task()
     return "清除成功"
 
