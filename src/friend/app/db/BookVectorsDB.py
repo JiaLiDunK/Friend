@@ -38,7 +38,10 @@ class BookVectorsDB:
             total = await self.session.exec(count_statement)
             item = result.all()
             count = total.one()
-            items = [dict(row._mapping) for row in item]  # Row 转 dict
+            items = [
+                {**dict(row._mapping), "tittle": dict(row._mapping).get("tittle") or "未能查询到书名"}
+                for row in item
+            ] # Row 转 dict
             return TableData[BookToVectors](total=count,items=items)
     async def del_data(self,data:BookVectors):
         """根据id删除数据"""
