@@ -3,7 +3,7 @@ from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.friend.config.DBConfig import get_session
+from src.friend.config.DBConfig import get_session, async_session
 from src.friend.entity.po.MessagePrompt import MessagePrompt
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData
@@ -40,8 +40,12 @@ class PromptDB:
         async with self.session.begin():
             statement = update(MessagePrompt).where(MessagePrompt.id==data.id).values(type_id=data.type_id,system_message=data.system_message,description=data.description)
             await self.session.exec(statement)
+    async def get_prompt_by_id(self,id:int):
+        """根据id查询数据"""
+        pass
 
 
 #工厂函数
-async def create_prompt_db(session: AsyncSession=Depends(get_session)) -> PromptDB:
-    return PromptDB(session)
+async def create_prompt_db() -> PromptDB:
+    async with async_session() as session:
+        return PromptDB(session)

@@ -5,6 +5,7 @@ from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from src.friend.config.DBConfig import async_session
 from src.friend.config.DBConfig import get_session
 from src.friend.entity.po.KnowledgeBase import KnowledgeBase
 from src.friend.entity.vo.QueryTable import QueryTable
@@ -65,6 +66,7 @@ class KnowledgeBaseDB:
         return item
 
 
-# 工厂函数
-async def create_knowledge_base_db(session: AsyncSession=Depends(get_session)) -> KnowledgeBaseDB:
-    return KnowledgeBaseDB(session)
+# 工厂函数(内部业务调用这个)
+async def create_knowledge_base_db() -> KnowledgeBaseDB:
+    async with  async_session() as session:
+        return KnowledgeBaseDB(session)

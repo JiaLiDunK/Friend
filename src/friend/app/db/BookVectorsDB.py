@@ -3,7 +3,7 @@ from sqlalchemy import func, delete
 from sqlmodel import select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.friend.config.DBConfig import get_session
+from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books
 from src.friend.entity.vo.BookToVectors import BookToVectors
@@ -57,12 +57,7 @@ class BookVectorsDB:
             item = result.all()
             return item
 
-
-
-
-
-
-
 # 工厂函数
-async def create_book_vectors_db(session: AsyncSession=Depends(get_session)) -> BookVectorsDB:
-    return BookVectorsDB(session)
+async def create_book_vectors_db() -> BookVectorsDB:
+    async with async_session() as session:
+        return BookVectorsDB(session)
