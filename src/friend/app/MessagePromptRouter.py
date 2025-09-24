@@ -24,6 +24,7 @@ async def insert_prompt(
         prompt_db: PromptDB=Depends(create_prompt_db)
 ):
     logger.info(f"插入数据:{data}")
+    data.id = None
     await prompt_db.insert_data(data)
     return R.ok().messages("新增成功")
 

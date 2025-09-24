@@ -1,4 +1,4 @@
-from typing_extensions import TypedDict
 
-class DataBaseState(TypeDict):
+
+class DataBaseState():
     message: str

@@ -42,7 +42,11 @@ class PromptDB:
             await self.session.exec(statement)
     async def get_prompt_by_id(self,id:int):
         """根据id查询数据"""
-        pass
+        async with self.session.begin():
+            statement = select(MessagePrompt.system_message).where(MessagePrompt.id==id)
+            result = await self.session.exec(statement)
+            item = result.one()
+        return item
 
 
 #工厂函数

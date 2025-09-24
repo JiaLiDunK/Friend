@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ALGORITHM:str = Field(default='HS256')
     ACCESS_TOKEN_EXPIRE_MINUTES:int = Field(default=30)
     BASE_URL_ALI: str | None = None
-    CODE_MODEL: str | None = None
+    MODEL: str | None = None
     API_KEY_ALI: str | None = None
     LOG_PATH: str | None = None
     MILVUS_URL: str | None = None

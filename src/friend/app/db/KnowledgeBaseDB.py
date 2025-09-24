@@ -57,12 +57,12 @@ class KnowledgeBaseDB:
             for record in item
         ]
         return option_list
-    async def get_data_to_ai(self):
+    async def get_data_to_ai(self)->List[KnowledgeBase]:
         """获取所有的数据"""
         async with self.session.begin():
             statement = select(KnowledgeBase)
             result = await self.session.exec(statement)
-            item = result.all()
+            item: List[KnowledgeBase]  = result.all()
         return item
 
 
