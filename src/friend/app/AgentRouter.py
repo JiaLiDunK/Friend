@@ -6,7 +6,7 @@ agentRouter = APIRouter()
 
 
 
-@agentRouter.post("/test")
-async def test(data:DataBaseNode = Depends(get_data_base_node)):
-    await data.should_create_knowledge_base()
+@agentRouter.get("/test")
+async def one_test_one(data:DataBaseNode = Depends(get_data_base_node)):
+    await data.should_create_book_vectors()
     return {"message": "Hello, World!::"}

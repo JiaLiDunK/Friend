@@ -73,4 +73,4 @@ async def test(current_user: str = Depends(get_current_user)):
 # 测试
 @app.get('/test1')
 async def test1():
-    return {"message": "Hello, World!::111"}
+    return {"处理完成"}

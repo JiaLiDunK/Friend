@@ -20,7 +20,8 @@ class DataBaseNode:
         self.book_vectors_db = book_vectors_db
         self.prompt_db = prompt_db
         # 创建工具
-        self.tools = [DataBaseTools.insert_knowledge_base,DataBaseTools.insert_book_vectors]
+        self.tools = [DataBaseTools.insert_knowledge_base,
+                      DataBaseTools.insert_book_vectors]
         # 2. 定义 prompt
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -53,12 +54,23 @@ class DataBaseNode:
            message += f"\n{item}"
         result_out = await self.llm.ainvoke(message)
         print(result_out.content)
+    async def should_create_book_vectors(self):
+        """判断是否需要创建书籍向量"""
+        knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
+        books_db_list = await self.book_vectors_db.get_data_to_ai()
+        for item in knowledge_base_list:
+            print(item)
+        print("=====================",len(books_db_list))
+        for item in books_db_list:
+            print(item)
+
     async def create_knowledge_base(self,data:DataBaseState):
-        """创建知识库的"""
+        """往数据库里面进行增删改查"""
         pass
+
     async def judge_knowledge_base(self,data:DataBaseState):
         """判断知识库是否需要更新"""
-        if len(data['message']) < 10:
+        if len(data.message) < 10:
             return 'end'
         else:
             return 'continue'

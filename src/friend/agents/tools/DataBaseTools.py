@@ -22,6 +22,7 @@ class DataBaseTools:
         await self.knowledge_base_db.insert_data(data)
         return "插入成功"
     @tool(args_schema=BookVectors)
-    async def insert_book_vectors(self):
+    async def insert_book_vectors(self,data:BookVectors):
         """是往book_vectors表中插入数据"""
-        pass
+        await self.books_db.insert_data(data)
+        return "插入成功"
