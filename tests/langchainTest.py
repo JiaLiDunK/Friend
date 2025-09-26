@@ -1,3 +1,5 @@
+import time
+
 from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -5,18 +7,23 @@ from langchain.tools import tool
 
 # 定义一个简单工具
 @tool
-def insert_record(table: str, values: dict) -> str:
-    """往指定表插入一条数据"""
+def insert_record_two(table: str, values: dict) -> str:
+    """1往指定表插入一条数据"""
+    print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     return f"成功插入 {values} 到 {table}"
-
-tools = [insert_record]
+@tool
+def insert_record_one(table: str, values: dict) -> str:
+    """往指定表插入一条数据"""
+    print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    return f"2成功插入 {values} 到 {table}"
+tools = [insert_record_one,insert_record_two]
 
 # 选择模型
 llm = ChatTongyi(model="qwen-plus", api_key="sk-")
 
 # 定义 prompt
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "你是一个智能助手，可以调用工具完成任务。"),
+    ("system", "你是一个智能助手，可以调用工具完成任务,必须同时调用两个工具。"),
     ("user", "{input}"),
     MessagesPlaceholder("agent_scratchpad"),
 ])

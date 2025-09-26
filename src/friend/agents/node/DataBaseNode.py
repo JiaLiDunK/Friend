@@ -41,7 +41,7 @@ class DataBaseNode:
         system_prompt = await prompt_db.get_prompt_by_id(2)
         return cls(knowledge_base_db,book_vectors_db,prompt_db,system_prompt)
 
-    async def should_create_knowledge_base(self):
+    async def should_create_knowledge_base(self,data:DataBaseState):
         """判断是否需要创建知识库,如果需要知识库,则返回对应的书籍"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
@@ -53,8 +53,10 @@ class DataBaseNode:
         for item in books_db_list:
            message += f"\n{item}"
         result_out = await self.llm.ainvoke(message)
-        print(result_out.content)
-    async def should_create_book_vectors(self):
+        # print(result_out.content)
+        data.message = result_out.content
+        return data
+    async def should_create_book_vectors(self,data:DataBaseState):
         """判断是否需要创建书籍向量"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
@@ -63,13 +65,15 @@ class DataBaseNode:
         print("=====================",len(books_db_list))
         for item in books_db_list:
             print(item)
+        data.message += "哈哈哈哈"
 
     async def create_knowledge_base(self,data:DataBaseState):
         """往数据库里面进行增删改查"""
-        pass
+        print(data.message)
 
-    async def judge_knowledge_base(self,data:DataBaseState):
+    async def judge_create(self,data:DataBaseState):
         """判断知识库是否需要更新"""
+        print("到判断点",data.message)
         if len(data.message) < 10:
             return 'end'
         else:

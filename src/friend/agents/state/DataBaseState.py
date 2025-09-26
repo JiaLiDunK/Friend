@@ -1,4 +1,4 @@
+from pydantic import BaseModel
 
-
-class DataBaseState():
-    message: str
+class DataBaseState(BaseModel):
+    message: str = ""
