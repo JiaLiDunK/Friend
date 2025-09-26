@@ -1,7 +1,7 @@
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
+from loguru import logger
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.app.db.PromptDB import create_prompt_db
 from src.friend.agents.tools.DataBaseTools import DataBaseTools
@@ -50,30 +50,37 @@ class DataBaseNode:
         for item in knowledge_base_list:
             message += f"\n{item}"
         message += "\n下面是相关的书籍:"
+        logger.info(len(books_db_list))
         for item in books_db_list:
            message += f"\n{item}"
+        logger.info(f"打印create_knowledge_base{message}")
         result_out = await self.llm.ainvoke(message)
-        # print(result_out.content)
         data.message = result_out.content
         return data
     async def should_create_book_vectors(self,data:DataBaseState):
         """判断是否需要创建书籍向量"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
+        message = await self.prompt_db.get_prompt_by_id(3)
+        message += "\n下面是已有的知识库相关的信息"
         for item in knowledge_base_list:
-            print(item)
-        print("=====================",len(books_db_list))
+            message += f"\n{item}"
+        message += "\n下面是相关的书籍:"
+        logger.info(len(books_db_list))
         for item in books_db_list:
-            print(item)
-        data.message += "哈哈哈哈"
+            message += f"\n{item}"
+        result_out = await self.llm.ainvoke(message)
+        data.message = result_out.content
+        return data
 
     async def create_knowledge_base(self,data:DataBaseState):
         """往数据库里面进行增删改查"""
-        print(data.message)
+        pass
+
 
     async def judge_create(self,data:DataBaseState):
         """判断知识库是否需要更新"""
-        print("到判断点",data.message)
+        logger.info(f"进入判断:{data.message}")
         if len(data.message) < 10:
             return 'end'
         else:

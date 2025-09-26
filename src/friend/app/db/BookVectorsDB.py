@@ -40,11 +40,7 @@ class BookVectorsDB:
             total = await self.session.exec(count_statement)
             item = result.all()
             count = total.one()
-            items = [
-                {**dict(row._mapping), "tittle": dict(row._mapping).get("tittle") or "未能查询到书名"}
-                for row in item
-            ] # Row 转 dict
-            return TableData[BookToVectors](total=count,items=items)
+            return TableData[BookToVectors](total=count,items=item)
     async def del_data(self,data:BookVectors):
         """根据id删除数据"""
         async with self.session.begin():
@@ -57,7 +53,7 @@ class BookVectorsDB:
             statement = statement.where(BookVectors.knowledge_base_id == 0).limit(100)
             result = await self.session.exec(statement)
             item:List[Books] = result.all()
-            return item
+        return item
 
 # 工厂函数
 async def create_book_vectors_db() -> BookVectorsDB:
