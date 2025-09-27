@@ -49,7 +49,7 @@ class BookVectorsDB:
     async def get_data_to_ai(self)->List[Books]:
         """获取前一百本书的名称"""
         async with self.session.begin():
-            statement = select(Books.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            statement = select(BookVectors.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
             statement = statement.where(BookVectors.knowledge_base_id == 0).limit(100)
             result = await self.session.exec(statement)
             item:List[Books] = result.all()

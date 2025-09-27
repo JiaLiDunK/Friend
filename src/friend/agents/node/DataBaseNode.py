@@ -73,7 +73,7 @@ class DataBaseNode:
         data.message = result_out.content
         return data
 
-    async def create_knowledge_base(self,data:DataBaseState):
+    async def create_data_base(self,data:DataBaseState):
         """往数据库里面进行增删改查"""
         pass
 

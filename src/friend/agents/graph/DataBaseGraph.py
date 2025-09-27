@@ -18,7 +18,7 @@ class DataBaseGraph:
         """异步构建一个根据书籍目录创建新的知识库"""
         graph_build = StateGraph(DataBaseState)
         graph_build.add_node("should_create_knowledge_base",self.data_base_node.should_create_knowledge_base)
-        graph_build.add_node("create_knowledge_base",self.data_base_node.create_knowledge_base)
+        graph_build.add_node("create_data_base",self.data_base_node.create_data_base)
         graph_build.add_edge(START,"should_create_knowledge_base")
         graph_build.add_conditional_edges(
             "should_create_knowledge_base",
@@ -33,7 +33,7 @@ class DataBaseGraph:
         """异步构建一个根据知识库分类书籍"""
         graph_build = StateGraph(DataBaseState)
         graph_build.add_node("should_create_book_vectors",self.data_base_node.should_create_book_vectors)
-        graph_build.add_node("create_book_vectors",self.data_base_node.create_book_vectors)
+        graph_build.add_node("create_data_base",self.data_base_node.create_data_base)
         graph_build.add_edge(START,"should_create_book_vectors")
         graph_build.add_conditional_edges(
             "should_create_book_vectors",
