@@ -29,7 +29,7 @@ class BookVectorsDB:
     async def get_data_list(self,data:QueryTable):
         """根据条件查询数据"""
         async with (self.session.begin()):
-            statement = select(Books.tittle,BookVectors.id,BookVectors.uuid,BookVectors.type_id,BookVectors.knowledge_base_id).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            statement = select(BookVectors, Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
             count_statement = select(func.count()).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
             # 动态拼接查询条件
             if data.keywords:
@@ -40,7 +40,17 @@ class BookVectorsDB:
             total = await self.session.exec(count_statement)
             item = result.all()
             count = total.one()
-            return TableData[BookToVectors](total=count,items=item)
+        items = [
+            BookToVectors(
+                id=bv.id,
+                uuid=bv.uuid,
+                type_id=bv.type_id,
+                knowledge_base_id=bv.knowledge_base_id,
+                tittle=tittle,
+            )
+            for bv, tittle in item
+        ]
+        return TableData[BookToVectors](total=count,items=items)
     async def del_data(self,data:BookVectors):
         """根据id删除数据"""
         async with self.session.begin():
@@ -49,7 +59,7 @@ class BookVectorsDB:
     async def get_data_to_ai(self)->List[Books]:
         """获取前一百本书的名称"""
         async with self.session.begin():
-            statement = select(BookVectors.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            statement = select(Books.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
             statement = statement.where(BookVectors.knowledge_base_id == 0).limit(100)
             result = await self.session.exec(statement)
             item:List[Books] = result.all()

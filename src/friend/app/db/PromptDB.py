@@ -29,7 +29,7 @@ class PromptDB:
             if data.keywords:
                 statement = statement.where(MessagePrompt.system_message.like(f"%{data.keywords}%"))
                 count_statement = count_statement.where(MessagePrompt.system_message.like(f"%{data.keywords}%"))
-            statement = statement.limit(data.pagesize).offset(data.page_num)
+            statement = statement.limit(data.pagesize).offset(data.page_num).order_by(MessagePrompt.id)
             result = await self.session.exec(statement)
             total = await self.session.exec(count_statement)
             item = result.all()

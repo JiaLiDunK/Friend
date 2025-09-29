@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
@@ -24,9 +26,16 @@ async def init_db():
     async with async_engine.begin() as connection:
         await connection.run_sync(SQLModel.metadata.create_all)
 
+@asynccontextmanager
 async def get_session() -> AsyncSession:
-    """创建并返回一个异步数据库会话"""
-    async with async_session() as session:
+    session = async_session()
+    try:
         yield session
+        await session.commit()   # 正常就提交
+    except Exception:
+        await session.rollback() # 出错就回滚
+        raise
+    finally:
+        await session.close()    # 一定回收连接
 
 

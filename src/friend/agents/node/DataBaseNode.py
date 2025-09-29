@@ -21,7 +21,7 @@ class DataBaseNode:
         self.prompt_db = prompt_db
         # 创建工具
         self.tools = [DataBaseTools.insert_knowledge_base,
-                      DataBaseTools.insert_book_vectors]
+                      DataBaseTools.update_book_vectors]
         # 2. 定义 prompt
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -38,7 +38,7 @@ class DataBaseNode:
         book_vectors_db = await create_book_vectors_db()
         prompt_db = await create_prompt_db()
         # 从数据库中读取system提示词
-        system_prompt = await prompt_db.get_prompt_by_id(2)
+        system_prompt = await prompt_db.get_prompt_by_id(4)
         return cls(knowledge_base_db,book_vectors_db,prompt_db,system_prompt)
 
     async def should_create_knowledge_base(self,data:DataBaseState):
@@ -50,37 +50,39 @@ class DataBaseNode:
         for item in knowledge_base_list:
             message += f"\n{item}"
         message += "\n下面是相关的书籍:"
-        logger.info(len(books_db_list))
         for item in books_db_list:
            message += f"\n{item}"
-        logger.info(f"打印create_knowledge_base{message}")
+        logger.info(f"打印create_knowledge_base:\n{message}")
         result_out = await self.llm.ainvoke(message)
         data.message = result_out.content
+        logger.info(f"回复的书籍:\n{data.message}")
         return data
     async def should_create_book_vectors(self,data:DataBaseState):
         """判断是否需要创建书籍向量"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
         message = await self.prompt_db.get_prompt_by_id(3)
-        message += "\n下面是已有的知识库相关的信息"
+        message += "\n已有的知识库:"
         for item in knowledge_base_list:
             message += f"\n{item}"
-        message += "\n下面是相关的书籍:"
-        logger.info(len(books_db_list))
+        message += "\n待分类书籍:"
         for item in books_db_list:
             message += f"\n{item}"
+        logger.info(f"生成的提示词信息:\n{message}")
         result_out = await self.llm.ainvoke(message)
         data.message = result_out.content
+        logger.info(f"回复的信息:\n{data.message}")
         return data
 
     async def create_data_base(self,data:DataBaseState):
         """往数据库里面进行增删改查"""
-        pass
+        logger.info("进入创建的页面")
+        await self.save_database_executor.ainvoke({"input":data.message})
+
 
 
     async def judge_create(self,data:DataBaseState):
         """判断知识库是否需要更新"""
-        logger.info(f"进入判断:{data.message}")
         if len(data.message) < 10:
             return 'end'
         else:

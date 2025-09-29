@@ -18,16 +18,26 @@ class DataBaseTools:
         books_db = await create_books_db()
         return cls(knowledge_base_db,books_db)
 
-    @tool(args_schema=KnowledgeBase)
-    async def insert_knowledge_base(self,data:KnowledgeBase):
+    @staticmethod
+    @tool
+    async def insert_knowledge_base(
+    self,
+    data_base: str,
+    collection: str,
+    data_base_remark: str,
+    collection_remark: str,
+    type_id: int):
         """是往knowledge_base表中插入数据"""
-        logger.info(f"插入知识库:{data}")
+        logger.info(f"agent插入知识库:{data_base}//{collection}//{data_base_remark}//{collection_remark}//{type_id}")
+        self.knowledge_base_db.insert_data(KnowledgeBase(data_base=data_base,collection=collection,data_base_remark=data_base_remark,collection_remark=collection_remark,type_id=type_id))
         return "插入成功"
 
+    @staticmethod
     @tool
-    async def update_book_vectors(data: List[Tuple[int, int]]) -> str:
+    async def update_book_vectors(self,data: List[Tuple[int, int]]) -> str:
         """更新 book_vectors 表中的数据。每个元素为 (id, knowledge_base_id)"""
         for id_, kb_id in data:
-            logger.info(f"更新数据 id={id_}, knowledge_base_id={kb_id}")
+            logger.info(f"agent更新数据 id={id_}, knowledge_base_id={kb_id}")
             # 在这里写数据库更新逻辑
+            self.books_db.update_data(BookVectors(id=id_, knowledge_base_id=kb_id))
         return "更新成功"

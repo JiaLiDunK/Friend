@@ -25,7 +25,7 @@ class DataBaseGraph:
             self.data_base_node.judge_create,
             {
                 "end":END,
-                "continue":"create_knowledge_base"
+                "continue":"create_data_base"
             }
         )
         return graph_build.compile()
@@ -40,7 +40,7 @@ class DataBaseGraph:
             self.data_base_node.judge_create,
             {
                 "end":END,
-                "continue":"create_book_vectors"
+                "continue":"create_data_base"
             }
         )
         return graph_build.compile()
