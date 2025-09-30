@@ -10,7 +10,6 @@ class KnowledgeBase(SQLModel, table=True):
         default=None,
         sa_column=Column(postgresql.INTEGER,
                          primary_key=True,
-                         unique=True,
                          autoincrement=True),
     )
     data_base: str

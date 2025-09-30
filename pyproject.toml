@@ -34,6 +34,7 @@ unstructured = "0.18.14"
 python-docx = "1.2.0"
 hf-xet = "1.1.9"
 pypandoc = "1.15"
+pdfplumber = "0.11.7"
 # 下述是可以去掉的包
 EbookLib = "0.19"
 [build-system]

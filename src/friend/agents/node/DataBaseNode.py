@@ -20,8 +20,8 @@ class DataBaseNode:
         self.book_vectors_db = book_vectors_db
         self.prompt_db = prompt_db
         # 创建工具
-        self.tools = [DataBaseTools.insert_knowledge_base,
-                      DataBaseTools.update_book_vectors]
+        db_tools = DataBaseTools(knowledge_base_db,book_vectors_db)
+        self.tools = db_tools.get_tools()
         # 2. 定义 prompt
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
