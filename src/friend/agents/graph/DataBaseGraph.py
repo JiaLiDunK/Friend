@@ -44,6 +44,9 @@ class DataBaseGraph:
             }
         )
         return graph_build.compile()
+    async def books_to_database(self):
+        """总结上述的两个流程"""
+        pass
 
     async def get_runnable(self,graph_type:str):
         """根据类型获取或者构建graph"""

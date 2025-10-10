@@ -13,3 +13,13 @@ async def one_test_one(data_one:DataBaseGraph = Depends(get_data_base_graph)):
     await data_one.run_base("knowledge_base")
     # await data_one.run_base("book_vectors")
     return {"message": "Hello, World!::"}
+
+@agentRouter.get("/knowledge_base")
+async def knowledge_base(data_one:DataBaseGraph = Depends(get_data_base_graph)):
+    await data_one.run_base("knowledge_base")
+    return "ok"
+
+@agentRouter.get("/book_vectors")
+async def book_vectors(data_one:DataBaseGraph = Depends(get_data_base_graph)):
+    await data_one.run_base("book_vectors")
+    return "ok"

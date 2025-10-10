@@ -46,7 +46,7 @@ class DataBaseNode:
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
         message =  await self.prompt_db.get_prompt_by_id(2)
-        message += "下面是已有的知识库相关的信息"
+        message += "\n下面是已有的知识库相关的信息,如果没有信息就返回相关的信息"
         for item in knowledge_base_list:
             message += f"\n{item}"
         message += "\n下面是相关的书籍:"
