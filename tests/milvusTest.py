@@ -1,6 +1,6 @@
 import asyncio
 from pymilvus import connections, utility, FieldSchema, CollectionSchema, DataType, Collection
-from src.friend.agents.rag.RagNode import RagNode
+from friend.agents.node.RagNode import RagNode
 
 
 async def main():

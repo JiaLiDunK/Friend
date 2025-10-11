@@ -26,6 +26,11 @@ class BookVectorsDB:
         async with self.session.begin():
             statement = update(BookVectors).where(BookVectors.id==data.id).values(uuid=data.uuid,type_id=data.type_id,knowledge_base_id=data.knowledge_base_id)
             await self.session.exec(statement)
+    async def update_data_only_id(self,data:Books):
+        """就更新书籍所在的书籍"""
+        async with self.session.begin():
+            statement = update(BookVectors).where(BookVectors.id == data.id).values(knowledge_base_id=data.knowledge_base_id)
+            await self.session.exec(statement)
     async def get_data_list(self,data:QueryTable):
         """根据条件查询数据"""
         async with (self.session.begin()):
@@ -59,7 +64,7 @@ class BookVectorsDB:
     async def get_data_to_ai(self)->List[Books]:
         """获取前一百本书的名称"""
         async with self.session.begin():
-            statement = select(Books.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
+            statement = select(BookVectors.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
             statement = statement.where(BookVectors.knowledge_base_id == 0).limit(100)
             result = await self.session.exec(statement)
             item:List[Books] = result.all()

@@ -2,6 +2,10 @@ from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from loguru import logger
+
+from src.friend.agents.node.MilvusNode import create_milvus_node
+from src.friend.agents.node.RagNode import get_rag_node
+from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.app.db.PromptDB import create_prompt_db
 from src.friend.agents.tools.DataBaseTools import DataBaseTools
@@ -11,14 +15,17 @@ from src.friend.config.SettingConfig import settings
 
 
 class DataBaseNode:
-    def __init__(self,knowledge_base_db,book_vectors_db,prompt_db,system_prompt):
+    def __init__(self,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node):
         self.llm = ChatTongyi(
             model=settings.MODEL,
             api_key=settings.API_KEY_ALI
         )
         self.knowledge_base_db = knowledge_base_db
         self.book_vectors_db = book_vectors_db
+        self.milvus_node = milvus_node
         self.prompt_db = prompt_db
+        self.chunk_db = chunk_db
+        self.rag_node = rag_node
         # 创建工具
         db_tools = DataBaseTools(knowledge_base_db,book_vectors_db)
         self.tools = db_tools.get_tools()
@@ -37,9 +44,12 @@ class DataBaseNode:
         knowledge_base_db = await create_knowledge_base_db()
         book_vectors_db = await create_book_vectors_db()
         prompt_db = await create_prompt_db()
+        milvus_node = await create_milvus_node()
+        chunk_db = await  create_chunk_db()
+        rag_node = await get_rag_node()
         # 从数据库中读取system提示词
         system_prompt = await prompt_db.get_prompt_by_id(4)
-        return cls(knowledge_base_db,book_vectors_db,prompt_db,system_prompt)
+        return cls(knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node)
 
     async def should_create_knowledge_base(self,data:DataBaseState):
         """判断是否需要创建知识库,如果需要知识库,则返回对应的书籍"""
@@ -57,8 +67,8 @@ class DataBaseNode:
         data.message = result_out.content
         logger.info(f"回复的书籍:\n{data.message}")
         return data
-    async def should_create_book_vectors(self,data:DataBaseState):
-        """判断是否需要创建书籍向量"""
+    async def should_update_book_vectors(self,data:DataBaseState):
+        """分配书籍向量的知识库"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
         message = await self.prompt_db.get_prompt_by_id(3)
@@ -76,10 +86,8 @@ class DataBaseNode:
 
     async def create_data_base(self,data:DataBaseState):
         """往数据库里面进行增删改查"""
-        logger.info("进入创建的页面")
+        logger.info(f"进入创建的页面:\n{data.message}")
         await self.save_database_executor.ainvoke({"input":data.message})
-
-
 
     async def judge_create(self,data:DataBaseState):
         """判断知识库是否需要更新"""
@@ -87,6 +95,25 @@ class DataBaseNode:
             return 'end'
         else:
             return 'continue'
+    async def data_to_chunk(self):
+        """把所有标注了知识库id和type_id为8的书籍向量化"""
+        # 1.获取所有知识库和相关集合的信息
+        knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
+        # 2.创建知识库和集合
+        for item in knowledge_base_list:
+            self.milvus_node.create_database(item.data_base)
+            self.milvus_node.create_collection(item.data_base,item.collection)
+        # 3.向量化相关的书籍
+        for item in knowledge_base_list:
+            data_list = self.chunk_db.get_content_by_uuid(item.uuid)
+            # 向量化，插入进数据库
+            embeddings = await self.rag_node.text_to_embedding_documents_bge(data_list)
+            data = [
+                embeddings,
+                data_list
+            ]
+            # 4.将数据插入进数据库中
+            await self.milvus_node.insert_into_data(data)
 
 async def get_data_base_node()-> DataBaseNode:
     if not hasattr(get_data_base_node,"instance"):

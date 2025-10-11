@@ -4,14 +4,13 @@ import pytest
 import asyncio
 
 
-from src.friend.agents.rag.RagNode import RagNode
+from friend.agents.node.RagNode import RagNode
 from src.friend.agents.node.MilvusNode import MilvusNode
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.friend.utils.StringUtils import remove_whitespace_list
-from pymilvus import connections
-from pymilvus import FieldSchema, CollectionSchema, DataType, Collection
-from pymilvus import utility
+
+
 # 连接到 Milvus 服务（默认端口是 19530）
 
 

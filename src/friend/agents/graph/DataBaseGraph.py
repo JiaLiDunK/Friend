@@ -32,11 +32,11 @@ class DataBaseGraph:
     async def build_create_book_graph(self):
         """异步构建一个根据知识库分类书籍"""
         graph_build = StateGraph(DataBaseState)
-        graph_build.add_node("should_create_book_vectors",self.data_base_node.should_create_book_vectors)
+        graph_build.add_node("should_update_book_vectors",self.data_base_node.should_update_book_vectors)
         graph_build.add_node("create_data_base",self.data_base_node.create_data_base)
-        graph_build.add_edge(START,"should_create_book_vectors")
+        graph_build.add_edge(START,"should_update_book_vectors")
         graph_build.add_conditional_edges(
-            "should_create_book_vectors",
+            "should_update_book_vectors",
             self.data_base_node.judge_create,
             {
                 "end":END,
@@ -46,7 +46,29 @@ class DataBaseGraph:
         return graph_build.compile()
     async def books_to_database(self):
         """总结上述的两个流程"""
-        pass
+        graph_build = StateGraph(DataBaseState)
+        graph_build.add_node("should_create_knowledge_base", self.data_base_node.should_create_knowledge_base)
+        graph_build.add_node("should_update_book_vectors", self.data_base_node.should_update_book_vectors)
+        graph_build.add_node("create_data_base", self.data_base_node.create_data_base)
+        graph_build.add_edge(START,"should_create_knowledge_base")
+        graph_build.add_conditional_edges(
+            "should_create_knowledge_base",
+            self.data_base_node.judge_create,
+            {
+                "end":"should_update_book_vectors",
+                "continue":"create_data_base"
+            }
+        )
+        graph_build.add_edge("create_data_base","should_update_book_vectors")
+        graph_build.add_conditional_edges(
+            "should_update_book_vectors",
+            self.data_base_node.judge_create,
+            {
+                "end":END,
+                "continue":"create_data_base"
+            }
+        )
+        return graph_build.compile()
 
     async def get_runnable(self,graph_type:str):
         """根据类型获取或者构建graph"""

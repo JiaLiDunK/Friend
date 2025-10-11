@@ -64,6 +64,12 @@ class ChunkDB:
             statement = delete(Chunk).where(Chunk.uuid==uuid)
             await self.session.exec(statement)
             self.session.add_all(data_list)
+
+    async def get_content_by_uuid(self, uuid: str):
+        """根据uuid获取所有的内容"""
+        statement = select(Chunk.content).where(Chunk.uuid == uuid)
+        result = await self.session.exec(statement)
+        return result.all()
 # 工厂函数（业务内部调用用这个）
 async def create_chunk_db() -> ChunkDB:
     async with async_session() as session:

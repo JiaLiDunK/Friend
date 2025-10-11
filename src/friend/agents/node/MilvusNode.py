@@ -1,74 +1,116 @@
-from typing import List
-
-from pymilvus import connections, Collection, MilvusClient, DataType, FieldSchema, CollectionSchema
-from loguru import logger
-from src.friend.agents.rag.RagNode import RagNode
+from friend.agents.node.RagNode import RagNode
 from src.friend.config.SettingConfig import settings
 
 
+from typing import List, Optional
+from pymilvus import MilvusClient, Collection, CollectionSchema, FieldSchema, DataType
+from loguru import logger
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+
+
 class MilvusNode:
-    def __init__(self,db_name: str,collection_name: str):
+    _executor = ThreadPoolExecutor(max_workers=4)  # 用于并发执行同步方法
+
+    def __init__(self, db_name: str, collection_name: str):
+        self.db_name = db_name
+        self.collection_name = collection_name
         self.client = MilvusClient(
             uri=settings.MILVUS_URL,
             port=settings.MILVUS_PORT,
             db_name=db_name
         )
+        self.client.using_database(db_name)
         self.collection = Collection(collection_name)
         self.rag_node = RagNode()
 
+    # ------------------------- 工具函数 -------------------------
+    async def _run_async(self, func, *args, **kwargs):
+        """在异步环境中运行同步Milvus方法"""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(self._executor, lambda: func(*args, **kwargs))
 
+    # ------------------------- 数据操作 -------------------------
     async def insert_into_data(self, data):
         """插入数据"""
-        self.collection.insert(data)
+        return await self._run_async(self.collection.insert, data)
 
-    async def search_data(self,text_list:List[str],output_fields:List[str],top_k:int=5,nprobe:int=10):
-        """搜索数据"""
+    async def search_data(
+        self,
+        text_list: List[str],
+        output_fields: List[str],
+        top_k: int = 5,
+        nprobe: int = 10
+    ):
+        """向量搜索"""
         embeddings = await self.rag_node.text_to_embedding_documents_bge(text_list)
         search_params = {"metric_type": "COSINE", "params": {"nprobe": nprobe}}
-        results = self.collection.search(
+        return await self._run_async(
+            self.collection.search,
             data=embeddings,
             anns_field="vector",
             param=search_params,
             limit=top_k,
             output_fields=output_fields
         )
-        return results
 
-    async def search_data_by_ids(self,ids:List[int],output_fields:List[str]):
-        """跟id查询数据"""
-        return self.collection.query(expr=f"id in {ids}", output_fields=output_fields)
+    async def search_data_by_ids(self, ids: List[int], output_fields: List[str]):
+        """根据ID查询数据"""
+        expr = f"id in {ids}"
+        return await self._run_async(self.collection.query, expr=expr, output_fields=output_fields)
+
+    # ------------------------- 数据库与集合管理 -------------------------
     async def get_all_data_base_name(self):
-        """获取所有的数据库的名称"""
-        return self.client.list_databases()
-    async def get_all_collection_name_by_database_name(self,database_name:str):
-        """获取指定数据库下的所有集合名称"""
+        """获取所有数据库名称"""
+        return await self._run_async(self.client.list_databases)
+
+    async def get_all_collection_name_by_database_name(self, database_name: str):
+        """获取指定数据库下所有集合"""
         self.client.using_database(database_name)
-        return self.client.list_collections()
-    async def create_database(self,data_base_name:str):
+        return await self._run_async(self.client.list_collections)
+
+    async def create_database(self, data_base_name: str):
         """创建数据库"""
-        if data_base_name in self.client.list_databases():
-            logger.info(f"{data_base_name}数据库已经存在")
+        existing_dbs = await self._run_async(self.client.list_databases)
+        if data_base_name in existing_dbs:
+            logger.info(f"数据库 '{data_base_name}' 已存在")
             return
-        await self.create_database(data_base_name=data_base_name)
-    async def create_collection(self,data_base_name:str,new_collection_name:str):
-        """创建指定数据库中的集合"""
+        await self._run_async(self.client.create_database, data_base_name)
+        logger.success(f"数据库 '{data_base_name}' 创建成功")
+
+    async def create_collection(self, data_base_name: str, new_collection_name: str):
+        """在指定数据库中创建集合"""
         self.client.using_database(data_base_name)
-        # 检查集合是否已经存在
-        if new_collection_name in self.client.list_collections():
-            logger.info(f"{new_collection_name}集合已经存在")
+        existing = await self._run_async(self.client.list_collections)
+        if new_collection_name in existing:
+            logger.info(f"集合 '{new_collection_name}' 已存在")
             return
-        # 定义字段
+
         fields = [
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=1024),
-            FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096)
+            FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096),
         ]
-        # 创建 schema
         schema = CollectionSchema(
             fields=fields,
-            description=f"{new_collection_name}的集合",
+            description=f"{new_collection_name} 的集合",
             enable_dynamic_field=True
         )
-        self.client.create_collection(collection_name=new_collection_name, schema=schema)
-        logger.info(f"集合 '{new_collection_name}' 创建成功")
+
+        await self._run_async(self.client.create_collection, new_collection_name, schema)
+        logger.success(f"集合 '{new_collection_name}' 创建成功")
+
+# ------------------------- 单例管理 -------------------------
+_milvus_node_instance: Optional[MilvusNode] = None
+_milvus_lock = asyncio.Lock()
+
+async def create_milvus_node(db_name: str = "default", collection_name: str = "default") -> MilvusNode:
+    """异步单例，获取 MilvusNode 实例"""
+    global _milvus_node_instance
+    async with _milvus_lock:
+        if _milvus_node_instance is None:
+            _milvus_node_instance = MilvusNode(db_name, collection_name)
+            logger.info(f"MilvusNode 实例已创建：DB={db_name}, Collection={collection_name}")
+        return _milvus_node_instance
 
