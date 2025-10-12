@@ -43,7 +43,7 @@ class DataBaseTools:
         return "插入成功"
 
     async def update_book_vectors(self, data: List[Tuple[int, int]]) -> str:
-        """修改 book_vectors 中的数据"""
+        """修改 book_vectors 中的数据,数据格式是[(id, knowledge_base_id), ...]"""
         for id_, kb_id in data:
             logger.info(f"agent更新数据 id={id_}, knowledge_base_id={kb_id}")
             await self.books_db.update_data_only_id(

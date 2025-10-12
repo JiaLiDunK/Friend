@@ -65,9 +65,16 @@ class BookVectorsDB:
         """获取前一百本书的名称"""
         async with self.session.begin():
             statement = select(BookVectors.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
-            statement = statement.where(BookVectors.knowledge_base_id == 0).limit(100)
+            statement = statement.where(BookVectors.knowledge_base_id == 0).limit(10).order_by(BookVectors.id)
             result = await self.session.exec(statement)
             item:List[Books] = result.all()
+        return item
+    async def get_uuid_list(self):
+        """获取所有的uuid"""
+        async with self.session.begin():
+            statement = select(BookVectors.uuid,BookVectors.knowledge_base_id).where(BookVectors.type_id==8,BookVectors.knowledge_base_id!=0)
+            result = await self.session.exec(statement)
+            item = result.all()
         return item
 
 # 工厂函数

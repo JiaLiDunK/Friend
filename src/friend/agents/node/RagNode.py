@@ -4,7 +4,6 @@ from langchain_ollama import OllamaEmbeddings
 
 
 from typing import List, Optional
-from langchain_community.embeddings import OllamaEmbeddings
 from loguru import logger
 import asyncio
 
@@ -15,7 +14,7 @@ class RagNode:
     默认使用 Ollama 的 bge-m3 模型。
     """
 
-    def __init__(self, model_name: str = "bge-m3"):
+    def __init__(self, model_name: str = "bge-m3:latest"):
         self.model_name = model_name
         self._bge_m3: Optional[OllamaEmbeddings] = None
         self._lock = asyncio.Lock()  # 防止多协程同时初始化
@@ -25,10 +24,10 @@ class RagNode:
         if self._bge_m3 is None:
             async with self._lock:
                 if self._bge_m3 is None:
-                    logger.info(f"🔧 正在加载 Embedding 模型：{self.model_name}")
+                    logger.info(f"正在加载 Embedding 模型：{self.model_name}")
                     # OllamaEmbeddings 是同步对象，所以直接创建
                     self._bge_m3 = OllamaEmbeddings(model=self.model_name)
-                    logger.success(f"✅ 模型 {self.model_name} 加载完成")
+                    logger.success(f"模型 {self.model_name} 加载完成")
 
     async def text_to_embedding_documents_bge(self, texts: List[str]):
         """

@@ -70,6 +70,7 @@ class ChunkDB:
         statement = select(Chunk.content).where(Chunk.uuid == uuid)
         result = await self.session.exec(statement)
         return result.all()
+
 # 工厂函数（业务内部调用用这个）
 async def create_chunk_db() -> ChunkDB:
     async with async_session() as session:

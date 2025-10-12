@@ -18,7 +18,10 @@ class DataBaseNode:
     def __init__(self,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node):
         self.llm = ChatTongyi(
             model=settings.MODEL,
-            api_key=settings.API_KEY_ALI
+            api_key=settings.API_KEY_ALI,  # 生成多样性控制
+            model_kwargs={
+                "temperature": 0.0  # 让回答统一
+            }
         )
         self.knowledge_base_db = knowledge_base_db
         self.book_vectors_db = book_vectors_db
@@ -56,10 +59,10 @@ class DataBaseNode:
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         books_db_list = await self.book_vectors_db.get_data_to_ai()
         message =  await self.prompt_db.get_prompt_by_id(2)
-        message += "\n下面是已有的知识库相关的信息,如果没有信息就返回相关的信息"
+        message += "\n【已有的知识库信息】"
         for item in knowledge_base_list:
             message += f"\n{item}"
-        message += "\n下面是相关的书籍:"
+        message += "\n【下面是相关的书籍】:"
         for item in books_db_list:
            message += f"\n{item}"
         logger.info(f"打印create_knowledge_base:\n{message}")
@@ -101,19 +104,26 @@ class DataBaseNode:
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
         # 2.创建知识库和集合
         for item in knowledge_base_list:
-            self.milvus_node.create_database(item.data_base)
-            self.milvus_node.create_collection(item.data_base,item.collection)
+            await self.milvus_node.create_database(item.data_base)
+            await self.milvus_node.create_collection(item.data_base,item.collection)
         # 3.向量化相关的书籍
-        for item in knowledge_base_list:
-            data_list = self.chunk_db.get_content_by_uuid(item.uuid)
+        book_list = await self.book_vectors_db.get_uuid_list()
+        # 暂时不进行下述的操作
+        for item in book_list:
+            logger.info(f"输出的是item的信息{item}")
+            data_list = await self.chunk_db.get_content_by_uuid(item.uuid)
             # 向量化，插入进数据库
             embeddings = await self.rag_node.text_to_embedding_documents_bge(data_list)
-            data = [
-                embeddings,
-                data_list
+            knowledge_base_data = await self.knowledge_base_db.get_data_by_id(item.knowledge_base_id)
+            data_to_insert = [
+                {"vector": vec, "content": text}
+                for vec, text in zip(embeddings, data_list)
             ]
+            logger.info(f"{len(embeddings)}={len(data_list)}={len(embeddings[0])}")
             # 4.将数据插入进数据库中
-            await self.milvus_node.insert_into_data(data)
+            await self.milvus_node.insert_into_data(data=data_to_insert,data_base_name=knowledge_base_data.data_base,collection_name=knowledge_base_data.collection)
+            logger.info(f"插入完成{item}")
+
 
 async def get_data_base_node()-> DataBaseNode:
     if not hasattr(get_data_base_node,"instance"):
