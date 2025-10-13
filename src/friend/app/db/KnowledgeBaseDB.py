@@ -1,12 +1,10 @@
 from typing import List
 
-from fastapi import Depends
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
-from src.friend.config.DBConfig import get_session
 from src.friend.entity.po.KnowledgeBase import KnowledgeBase
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData

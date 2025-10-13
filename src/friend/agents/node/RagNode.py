@@ -1,11 +1,8 @@
-from typing import List
+import asyncio
+from typing import List, Optional
 
 from langchain_ollama import OllamaEmbeddings
-
-
-from typing import List, Optional
 from loguru import logger
-import asyncio
 
 
 class RagNode:

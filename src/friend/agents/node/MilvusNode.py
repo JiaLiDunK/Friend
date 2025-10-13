@@ -1,16 +1,15 @@
-from litellm.proxy.proxy_server import embeddings
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Optional
+
+from loguru import logger
+from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType
 from pymilvus.milvus_client import IndexParams
 
 from friend.entity.ai.AIResponseMessage import AIResponseMessage
-from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.agents.node.RagNode import RagNode
+from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.config.SettingConfig import settings
-
-from typing import List, Optional
-from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType, Collection
-from loguru import logger
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 
 class MilvusNode:

@@ -5,12 +5,12 @@ from loguru import logger
 
 from src.friend.agents.node.MilvusNode import create_milvus_node
 from src.friend.agents.node.RagNode import get_rag_node
-from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.agents.state.DataBaseState import DataBaseState
-from src.friend.app.db.PromptDB import create_prompt_db
 from src.friend.agents.tools.DataBaseTools import DataBaseTools
 from src.friend.app.db.BookVectorsDB import create_book_vectors_db
+from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
+from src.friend.app.db.PromptDB import create_prompt_db
 from src.friend.config.SettingConfig import settings
 
 

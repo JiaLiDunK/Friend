@@ -1,10 +1,10 @@
 import asyncio
-from loguru import logger
 import os
 import random
 import re
 import string
 from typing import List, Any
+
 import ebooklib
 import pdfplumber
 from bs4 import BeautifulSoup
@@ -12,6 +12,7 @@ from ebooklib import epub
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader, UnstructuredWordDocumentLoader
+from loguru import logger
 from pdfplumber.utils.exceptions import PdfminerException
 
 

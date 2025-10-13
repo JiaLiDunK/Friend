@@ -1,6 +1,5 @@
 from typing import List
 
-from fastapi.params import Depends
 from sqlalchemy import func, delete
 from sqlmodel import select, update
 from sqlmodel.ext.asyncio.session import AsyncSession

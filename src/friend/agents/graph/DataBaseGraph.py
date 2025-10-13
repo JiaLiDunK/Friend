@@ -1,9 +1,9 @@
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
-from loguru import logger
 
 from src.friend.agents.node.DataBaseNode import DataBaseNode
 from src.friend.agents.state.DataBaseState import DataBaseState
+
 
 class DataBaseGraph:
     def __init__(self, data_base_node: DataBaseNode):
