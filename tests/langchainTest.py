@@ -1,3 +1,4 @@
+import json
 import time
 
 from langchain_community.chat_models.tongyi import ChatTongyi
@@ -41,3 +42,38 @@ executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 print("\n===== 跑 executor =====")
 executor_result = executor.invoke({"input": "请在 users 表插入一个用户，名字是 Alice，年龄是 25"})
 print("Executor 输出：", executor_result["output"])
+
+# 定义一个数据模型（用于把JSON转成对象）
+class Book(BaseModel):
+    title: str
+    author: str
+    year: int
+    genre: str
+
+# 初始化 LLM
+llm = ChatTongyi(model="qwen-plus", api_key="sk-")
+
+# 定义提示模板
+prompt = ChatPromptTemplate.from_template("""
+请生成一个书籍信息的JSON，包含以下字段：
+title（书名）、author（作者）、year（出版年份）、genre（类型）。
+只返回JSON格式。
+""")
+
+# 生成内容
+response = llm.invoke(prompt.format())
+
+# 输出原始字符串
+print("🔹 LLM返回内容：")
+print(response.content)
+
+# 解析成JSON对象
+data = json.loads(response.content)
+
+# 转换成Python对象
+book = Book(**data)
+
+# 打印结果
+print("\n🔹 转换为对象：")
+print(book)
+print(f"书名：{book.title}，作者：{book.author}")

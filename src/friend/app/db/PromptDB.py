@@ -40,10 +40,10 @@ class PromptDB:
         async with self.session.begin():
             statement = update(MessagePrompt).where(MessagePrompt.id==data.id).values(type_id=data.type_id,system_message=data.system_message,description=data.description)
             await self.session.exec(statement)
-    async def get_prompt_by_id(self,id:int):
+    async def get_prompt_by_id(self,ids:int):
         """根据id查询数据"""
         async with self.session.begin():
-            statement = select(MessagePrompt.system_message).where(MessagePrompt.id==id)
+            statement = select(MessagePrompt.system_message).where(MessagePrompt.id==ids)
             result = await self.session.exec(statement)
             item = result.one()
         return item

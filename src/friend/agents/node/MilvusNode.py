@@ -1,5 +1,8 @@
+from litellm.proxy.proxy_server import embeddings
 from pymilvus.milvus_client import IndexParams
 
+from friend.entity.ai.AIResponseMessage import AIResponseMessage
+from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.agents.node.RagNode import RagNode
 from src.friend.config.SettingConfig import settings
 
@@ -12,27 +15,26 @@ from concurrent.futures import ThreadPoolExecutor
 
 class MilvusNode:
     _executor = ThreadPoolExecutor(max_workers=4)  # 并发执行同步方法
-
-    def __init__(self, db_name: str, collection_name: str):
+    def __init__(self,knowledge_base_db, db_name: str, collection_name: str):
         self.db_name = db_name
         self.collection_name = collection_name
-
+        self.knowledge_base_db = knowledge_base_db
         #修正连接 URI，确保符合新版要求
         uri = settings.MILVUS_URL
         if not uri.startswith(("tcp://", "http://", "https://", "unix://")):
             uri = f"tcp://{uri}:{settings.MILVUS_PORT}"
-
         self.client = MilvusClient(uri=uri, db_name=db_name)
-
         # 切换数据库
         self.client.using_database(db_name)
         self.rag_node = RagNode()
-
         # 检查并创建集合
         if not self.client.has_collection(collection_name):
             self._create_default_collection(collection_name)
-
         logger.success(f"MilvusNode 已连接: DB={db_name}, Collection={collection_name}")
+    @classmethod
+    async def create(cls):
+        knowledge_base_db = await create_knowledge_base_db()
+        return cls(knowledge_base_db,db_name="default",collection_name="default")
 
     def _create_default_collection(self, collection_name: str):
         """内部函数：确保默认集合存在"""
@@ -72,7 +74,6 @@ class MilvusNode:
         """向量搜索"""
         embeddings = await self.rag_node.text_to_embedding_documents_bge(text_list)
         search_params = {"metric_type": "COSINE", "params": {"nprobe": nprobe}}
-
         return await self._run_async(
             self.client.search,
             collection_name=self.collection_name,
@@ -92,6 +93,24 @@ class MilvusNode:
             expr=expr,
             output_fields=output_fields
         )
+    async def search_data_get_list(self,search_data:AIResponseMessage,top_k: int = 5,
+        nprobe: int = 10):
+        """生成的问题去指定的知识库中查询"""
+        knowledge_base = await self.knowledge_base_db.get_data_by_id(search_data.knowledge_base_id)
+        embedding = await self.rag_node.text_to_embedding_query_bge(AIResponseMessage.message)
+        search_params = {"metric_type": "COSINE", "params": {"nprobe": nprobe}}
+        # 切换知识库
+        self.client.using_database(knowledge_base.data_base)
+        data_list = await self._run_async(
+            self.client.search,
+            collection_name=knowledge_base.collection,
+            data=embedding,
+            anns_field="vector",
+            search_params=search_params,
+            limit=top_k,
+            output_fields=["content"],
+        )
+        # 还需要的是根据id获取前后文的内容
 
     # ------------------------- 数据库与集合管理 -------------------------
     async def get_all_data_base_name(self):
@@ -119,14 +138,12 @@ class MilvusNode:
         if new_collection_name in existing:
             logger.info(f"集合 '{new_collection_name}' 已存在")
             return
-
         fields = [
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=1024),
             FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096),
         ]
         schema = CollectionSchema(fields=fields, enable_dynamic_field=True)
-
         await self._run_async(self.client.create_collection, new_collection_name, schema=schema)
         logger.success(f"集合 '{new_collection_name}' 创建成功")
         #创建索引
@@ -137,13 +154,11 @@ class MilvusNode:
             metric_type="L2",
             params={"M": 8, "efConstruction": 64}
         )
-
         await self._run_async(
             self.client.create_index,
             collection_name=new_collection_name,
             index_params=index_params
         )
-
 
 # ------------------------- 单例管理 -------------------------
 _milvus_node_instance: Optional[MilvusNode] = None
