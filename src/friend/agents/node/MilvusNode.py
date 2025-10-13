@@ -6,10 +6,11 @@ from loguru import logger
 from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType
 from pymilvus.milvus_client import IndexParams
 
-from friend.entity.ai.AIResponseMessage import AIResponseMessage
+from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
 from src.friend.agents.node.RagNode import RagNode
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.config.SettingConfig import settings
+from src.friend.entity.ai.MilvusResponse import SearchContent
 
 
 class MilvusNode:
@@ -95,20 +96,26 @@ class MilvusNode:
     async def search_data_get_list(self,search_data:AIResponseMessage,top_k: int = 5,
         nprobe: int = 10):
         """生成的问题去指定的知识库中查询"""
+        logger.info(f"进入搜索页面{search_data.message}")
         knowledge_base = await self.knowledge_base_db.get_data_by_id(search_data.knowledge_base_id)
-        embedding = await self.rag_node.text_to_embedding_query_bge(AIResponseMessage.message)
-        search_params = {"metric_type": "COSINE", "params": {"nprobe": nprobe}}
+        logger.info(f"获取到的数据{knowledge_base}")
+        embedding = await self.rag_node.text_to_embedding_query_bge(search_data.message)
+        search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
         # 切换知识库
         self.client.using_database(knowledge_base.data_base)
+        self.client.load_collection(knowledge_base.collection)
         data_list = await self._run_async(
             self.client.search,
             collection_name=knowledge_base.collection,
-            data=embedding,
+            data=[embedding],
             anns_field="vector",
             search_params=search_params,
             limit=top_k,
             output_fields=["content"],
         )
+        milvus_list = [SearchContent(**item) for item in data_list[0]]
+        for milvus in milvus_list:
+            logger.info(f"输出一下:{milvus}\n")
         # 还需要的是根据id获取前后文的内容
 
     # ------------------------- 数据库与集合管理 -------------------------
@@ -169,6 +176,7 @@ async def create_milvus_node(db_name: str = "default", collection_name: str = "d
     global _milvus_node_instance
     async with _milvus_lock:
         if _milvus_node_instance is None:
-            _milvus_node_instance = MilvusNode(db_name, collection_name)
+            knowledge_base_db = await create_knowledge_base_db()
+            _milvus_node_instance = MilvusNode(knowledge_base_db=knowledge_base_db,db_name=db_name, collection_name=collection_name)
             logger.info(f"MilvusNode 实例已创建：DB={db_name}, Collection={collection_name}")
         return _milvus_node_instance

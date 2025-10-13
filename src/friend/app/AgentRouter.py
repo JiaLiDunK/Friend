@@ -1,15 +1,20 @@
 from fastapi import APIRouter, Depends
-
+from loguru import logger
 from src.friend.agents.graph.DataBaseGraph import DataBaseGraph, get_data_base_graph
 from src.friend.agents.node.DataBaseNode import DataBaseNode, get_data_base_node
+from src.friend.agents.node.MilvusNode import MilvusNode, create_milvus_node
+from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
 
 agentRouter = APIRouter()
 
 
 
 @agentRouter.get("/test")
-async def one_test_one(data_one:DataBaseNode = Depends(get_data_base_node)):
-    await data_one.data_to_chunk()
+async def one_test_one(data_one:MilvusNode = Depends(create_milvus_node)):
+    data = AIResponseMessage(
+        knowledge_base_id=64,message="?")
+    logger.info(f"进入了")
+    await data_one.search_data_get_list(data)
     return {"message": "Hello, World!::"}
 
 @agentRouter.get("/knowledge_base")
