@@ -6,16 +6,16 @@ from loguru import logger
 from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType
 from pymilvus.milvus_client import IndexParams
 
-from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
-from src.friend.agents.node.RagNode import RagNode
-from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
+from src.friend.agents.node.RagNode import RagNode, get_rag_node
+from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db, KnowledgeBaseDB
 from src.friend.config.SettingConfig import settings
+from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
 from src.friend.entity.ai.MilvusResponse import SearchContent
 
 
 class MilvusNode:
     _executor = ThreadPoolExecutor(max_workers=4)  # 并发执行同步方法
-    def __init__(self,knowledge_base_db, db_name: str, collection_name: str):
+    def __init__(self,knowledge_base_db:KnowledgeBaseDB,rag_node:RagNode, db_name: str, collection_name: str):
         self.db_name = db_name
         self.collection_name = collection_name
         self.knowledge_base_db = knowledge_base_db
@@ -26,7 +26,7 @@ class MilvusNode:
         self.client = MilvusClient(uri=uri, db_name=db_name)
         # 切换数据库
         self.client.using_database(db_name)
-        self.rag_node = RagNode()
+        self.rag_node = rag_node
         # 检查并创建集合
         if not self.client.has_collection(collection_name):
             self._create_default_collection(collection_name)
@@ -34,7 +34,8 @@ class MilvusNode:
     @classmethod
     async def create(cls):
         knowledge_base_db = await create_knowledge_base_db()
-        return cls(knowledge_base_db,db_name="default",collection_name="default")
+        rag_node = await get_rag_node()
+        return cls(knowledge_base_db,rag_node,db_name="default",collection_name="default")
 
     def _create_default_collection(self, collection_name: str):
         """内部函数：确保默认集合存在"""

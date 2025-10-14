@@ -1,5 +1,4 @@
 from sqlalchemy import func, update
-from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 

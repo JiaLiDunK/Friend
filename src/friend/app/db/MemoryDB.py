@@ -1,7 +1,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.friend.entity.po.Memory import Memory
 from src.friend.config.DBConfig import async_session
+from src.friend.entity.po.Memory import Memory
 
 
 class MemoryDB:
