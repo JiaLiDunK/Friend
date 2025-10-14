@@ -114,9 +114,17 @@ class MilvusNode:
             output_fields=["content"],
         )
         milvus_list = [SearchContent(**item) for item in data_list[0]]
-        for milvus in milvus_list:
-            logger.info(f"输出一下:{milvus}\n")
-        # 还需要的是根据id获取前后文的内容
+        # 过滤掉相似度低的数据
+        milvus_list = [item for item in milvus_list if item.distance >= 0.65]
+        if len(milvus_list) == 0:
+            return []
+        # 下述是根据id获取前后文的内容
+        id_list:List[int] = [item.id for item in milvus_list]
+        response_list = await self.search_data_by_ids(id_list,["content"])
+        result_list = [SearchContent(**item) for item in response_list[0]]
+        for item in result_list:
+            logger.info(f"输出的结果:{item}")
+        return result_list
 
     # ------------------------- 数据库与集合管理 -------------------------
     async def get_all_data_base_name(self):
