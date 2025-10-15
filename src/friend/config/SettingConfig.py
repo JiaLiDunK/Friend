@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     LOG_PATH: str | None = None
     MILVUS_URL: str | None = None
     MILVUS_PORT: str | None = None
+    REDIS_URL: str | None = None
+    REDIS_PORT: str | None = None
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"

@@ -85,15 +85,7 @@ class MilvusNode:
             output_fields=output_fields,
         )
 
-    async def search_data_by_ids(self, ids: List[int], output_fields: List[str]):
-        """根据 ID 查询数据"""
-        expr = f"id in {ids}"
-        return await self._run_async(
-            self.client.query,
-            collection_name=self.collection_name,
-            expr=expr,
-            output_fields=output_fields
-        )
+
     async def search_data_get_list(self,search_data:AIResponseMessage,top_k: int = 5,
         nprobe: int = 10):
         """生成的问题去指定的知识库中查询"""
@@ -121,8 +113,16 @@ class MilvusNode:
             return []
         # 下述是根据id获取前后文的内容
         id_list:List[int] = [item.id for item in milvus_list]
-        response_list = await self.search_data_by_ids(id_list,["content"])
-        result_list = [SearchContent(**item) for item in response_list[0]]
+        id_expr = f"id in {id_list}"  # 生成 Milvus 查询条件
+        response_list = await self._run_async(
+            self.client.query,
+            collection_name=knowledge_base.collection,
+            filter=id_expr,
+            output_fields=["content"],
+        )
+        logger.info(f"查询到的数据{response_list}")
+        # 返回的格式不一样，有问题
+        result_list = [SearchContent(**item) for item in response_list]
         for item in result_list:
             logger.info(f"输出的结果:{item}")
         return result_list
@@ -186,6 +186,7 @@ async def create_milvus_node(db_name: str = "default", collection_name: str = "d
     async with _milvus_lock:
         if _milvus_node_instance is None:
             knowledge_base_db = await create_knowledge_base_db()
-            _milvus_node_instance = MilvusNode(knowledge_base_db=knowledge_base_db,db_name=db_name, collection_name=collection_name)
+            rag_node = await get_rag_node()
+            _milvus_node_instance = MilvusNode(knowledge_base_db=knowledge_base_db,rag_node=rag_node,db_name=db_name, collection_name=collection_name)
             logger.info(f"MilvusNode 实例已创建：DB={db_name}, Collection={collection_name}")
         return _milvus_node_instance
