@@ -1,0 +1,14 @@
+from typing import Optional
+
+import sqlalchemy.dialects.postgresql as postgresql
+from sqlmodel import SQLModel, Field, Column
+
+
+class KnowledgeBase(SQLModel, table=True):
+    __tablename__ = "knowledge_base"
+    id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(postgresql.INTEGER,
+                         primary_key=True,
+                         autoincrement=True),
+    )
