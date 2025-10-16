@@ -1,13 +1,11 @@
+import asyncio
 from typing import List
 
 import pytest
-import asyncio
-
-
 from friend.agents.node.RagNode import RagNode
-from src.friend.agents.node.MilvusNode import MilvusNode
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from src.friend.agents.node.MilvusNode import MilvusNode
 from src.friend.utils.StringUtils import remove_whitespace_list
 
 

@@ -1,7 +1,8 @@
-import os
 import base64
-import requests
+import os
 from datetime import datetime
+
+import requests
 from openai import OpenAI
 
 '''

@@ -1,24 +1,13 @@
+import asyncio
+import os
 import uuid
 from typing import List
-
-import ebooklib
-from bs4 import BeautifulSoup
-from ebooklib import epub
-
-from src.friend.app.db.BooksDB import create_books_db
-from src.friend.app.db.ChunkDB import create_chunk_db
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-import os
-import asyncio
-
-from openpyxl.styles.builtins import title
-from sympy import content
 
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.utils import StringUtils
 from src.friend.utils.StringUtils import load_chunk_document
+
 
 def split_all_files_in_dir(dir_path, parts=10):
     """遍历目录，把文件均分到 parts 份"""
