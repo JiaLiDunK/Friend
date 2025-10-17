@@ -1,4 +1,5 @@
 from fastapi import Depends
+from friend.config.DBConfig import async_session
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -20,6 +21,8 @@ class TypeDB:
             if data is not None:
                 return "类型已存在"
             else:
+                # 移除 id，防止手动传入重复主键
+                type_data.id = None
                 self.session.add(type_data)
                 return "类型添加成功"
 
@@ -54,5 +57,6 @@ class TypeDB:
 
 
 # 工厂函数
-async def create_type_db(session: AsyncSession=Depends(get_session)) -> TypeDB:
-    return TypeDB(session)
+async def create_type_db() -> TypeDB:
+    async with async_session() as session:
+        return TypeDB(session)

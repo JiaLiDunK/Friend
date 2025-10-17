@@ -20,9 +20,10 @@ from src.friend.config.SecurityConfig import get_current_user
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("服务器启动中")
-    await init_redis()
+    # 先不调用redis
+    # await init_redis()
     yield
-    await close_redis()
+    # await close_redis()
     logger.info("服务器关闭中")
 
 

@@ -5,6 +5,7 @@ from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
 from langchain_community.chat_models.tongyi import ChatTongyi
+from pydantic import BaseModel
 
 
 # 定义一个简单工具
