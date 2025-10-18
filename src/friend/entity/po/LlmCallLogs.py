@@ -1,4 +1,4 @@
-from datetime import time, datetime
+from datetime import datetime
 from typing import Optional
 
 import sqlalchemy.dialects.postgresql as postgresql
@@ -22,5 +22,5 @@ class LlmCallLogs(SQLModel, table=True):
     function_name:str
     error_message:str
     call_type:int
-    elapsed_time:float
-    uuid:str
+    elapsed_times:float
+    count:int

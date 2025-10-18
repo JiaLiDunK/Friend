@@ -1,3 +1,4 @@
+from langchain_core.messages import HumanMessage
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
 
@@ -84,7 +85,7 @@ class DataBaseGraph:
     async def run_base(self,graph_type:str):
         """根据类型运行不一样的graph"""
         runnable = await self.get_runnable(graph_type)
-        result = await runnable.ainvoke({"message":""})
+        result = await runnable.ainvoke({"message": HumanMessage(content="")})
         return result
 
 async def get_data_base_graph()->DataBaseGraph:

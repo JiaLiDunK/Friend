@@ -1,10 +1,8 @@
-from fastapi import Depends
-from friend.config.DBConfig import async_session
 from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.friend.config.DBConfig import get_session
+from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.SysType import SysType
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData

@@ -13,7 +13,6 @@ from src.friend.app.MessagePromptRouter import messagePromptRouter
 from src.friend.app.ReadAndOutRouter import readAndOutRouter
 from src.friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
-from src.friend.config.RedisConfig import init_redis, close_redis
 from src.friend.config.SecurityConfig import get_current_user
 
 

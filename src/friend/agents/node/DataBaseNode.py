@@ -7,6 +7,8 @@ from src.friend.agents.node.MilvusNode import create_milvus_node
 from src.friend.agents.node.RagNode import get_rag_node
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.agents.tools.DataBaseTools import DataBaseTools
+from src.friend.app.core.AgentTokenHandler import get_tongyi_token_handler
+from src.friend.app.core.LLMManager import LLMManager, get_llm_manager
 from src.friend.app.db.BookVectorsDB import create_book_vectors_db
 from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
@@ -15,13 +17,21 @@ from src.friend.config.SettingConfig import settings
 
 
 class DataBaseNode:
-    def __init__(self,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node):
+    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,tongyi_token_handler):
         self.llm = ChatTongyi(
             model=settings.MODEL,
-            api_key=settings.API_KEY_ALI,  # 生成多样性控制
+            api_key=settings.API_KEY_ALI,
             model_kwargs={
                 "temperature": 0.0  # 让回答统一
             }
+        )
+        self.agent_llm = ChatTongyi(
+            model=settings.MODEL,
+            api_key=settings.API_KEY_ALI,
+            model_kwargs={
+                "temperature": 0.0  # 让回答统一
+            },
+            callbacks=[tongyi_token_handler]
         )
         self.knowledge_base_db = knowledge_base_db
         self.book_vectors_db = book_vectors_db
@@ -29,17 +39,28 @@ class DataBaseNode:
         self.prompt_db = prompt_db
         self.chunk_db = chunk_db
         self.rag_node = rag_node
+        self.llm_manager = llm_manager
         # 创建工具
         db_tools = DataBaseTools(knowledge_base_db,book_vectors_db)
         self.tools = db_tools.get_tools()
-        # 2. 定义 prompt
+        # 用llm_manager的装饰器包装需要记录的函数
+        self.should_create_knowledge_base = self.llm_manager.tongyi_chat_token_time_logger(
+            self.should_create_knowledge_base
+        )
+        self.should_update_book_vectors = self.llm_manager.tongyi_chat_token_time_logger(
+            self.should_update_book_vectors
+        )
+        self.create_data_base = self.llm_manager.tongyi_agent_token_time_logger(
+            self.create_data_base
+        )
+        # 定义 prompt
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", "{input}"),
             MessagesPlaceholder("agent_scratchpad"),
         ])
         # 创建agent和executor
-        self.save_database_agent  = create_openai_tools_agent(self.llm,self.tools,self.prompt)
+        self.save_database_agent  = create_openai_tools_agent(self.agent_llm,self.tools,self.prompt)
         self.save_database_executor = AgentExecutor(agent=self.save_database_agent, tools=self.tools, verbose=True)
 
     @classmethod
@@ -50,10 +71,11 @@ class DataBaseNode:
         milvus_node = await create_milvus_node()
         chunk_db = await  create_chunk_db()
         rag_node = await get_rag_node()
+        llm_manager = await get_llm_manager()
+        tongyi_token_handler = await get_tongyi_token_handler()
         # 从数据库中读取system提示词
         system_prompt = await prompt_db.get_prompt_by_id(4)
-        return cls(knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node)
-
+        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,tongyi_token_handler)
     async def should_create_knowledge_base(self,data:DataBaseState):
         """判断是否需要创建知识库,如果需要知识库,则返回对应的书籍"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
@@ -67,7 +89,7 @@ class DataBaseNode:
            message += f"\n{item}"
         logger.info(f"打印create_knowledge_base:\n{message}")
         result_out = await self.llm.ainvoke(message)
-        data.message = result_out.content
+        data.message = result_out
         logger.info(f"回复的书籍:\n{data.message}")
         return data
     async def should_update_book_vectors(self,data:DataBaseState):
@@ -83,7 +105,7 @@ class DataBaseNode:
             message += f"\n{item}"
         logger.info(f"生成的提示词信息:\n{message}")
         result_out = await self.llm.ainvoke(message)
-        data.message = result_out.content
+        data.message = result_out
         logger.info(f"回复的信息:\n{data.message}")
         return data
 
@@ -94,6 +116,7 @@ class DataBaseNode:
 
     async def judge_create(self,data:DataBaseState):
         """判断知识库是否需要更新"""
+        return 'continue'
         if len(data.message) < 10:
             return 'end'
         else:

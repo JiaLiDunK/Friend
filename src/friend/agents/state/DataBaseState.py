@@ -1,4 +1,5 @@
+from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 class DataBaseState(BaseModel):
-    message: str = ""
+    message: BaseMessage

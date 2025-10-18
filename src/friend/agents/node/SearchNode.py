@@ -1,7 +1,6 @@
 import json
 from typing import List
 
-from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
 from langchain_community.chat_models import ChatTongyi
 
 from src.friend.agents.node.MilvusNode import create_milvus_node, MilvusNode
@@ -9,6 +8,7 @@ from src.friend.app.db.KnowledgeBaseDB import KnowledgeBaseDB
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.app.db.PromptDB import create_prompt_db, PromptDB
 from src.friend.config.SettingConfig import settings
+from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
 
 
 class SearchNode:
