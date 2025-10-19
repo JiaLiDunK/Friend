@@ -8,3 +8,7 @@ class SearchContent(BaseModel):
     id:int
     distance:float
     entity:Entity
+
+class ContentId(BaseModel):
+    id:int
+    content:str

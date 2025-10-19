@@ -7,7 +7,7 @@ from src.friend.agents.node.MilvusNode import create_milvus_node
 from src.friend.agents.node.RagNode import get_rag_node
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.agents.tools.DataBaseTools import DataBaseTools
-from src.friend.app.core.AgentTokenHandler import get_tongyi_token_handler
+from src.friend.app.core.AgentTokenHandler import TongyiTokenHandler, _current_handler
 from src.friend.app.core.LLMManager import LLMManager, get_llm_manager
 from src.friend.app.db.BookVectorsDB import create_book_vectors_db
 from src.friend.app.db.ChunkDB import create_chunk_db
@@ -17,7 +17,7 @@ from src.friend.config.SettingConfig import settings
 
 
 class DataBaseNode:
-    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,tongyi_token_handler):
+    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node):
         self.llm = ChatTongyi(
             model=settings.MODEL,
             api_key=settings.API_KEY_ALI,
@@ -25,13 +25,15 @@ class DataBaseNode:
                 "temperature": 0.0  # 让回答统一
             }
         )
+        handler = TongyiTokenHandler()
+        _current_handler.set(handler)
         self.agent_llm = ChatTongyi(
             model=settings.MODEL,
             api_key=settings.API_KEY_ALI,
             model_kwargs={
                 "temperature": 0.0  # 让回答统一
             },
-            callbacks=[tongyi_token_handler]
+            callbacks=[handler]
         )
         self.knowledge_base_db = knowledge_base_db
         self.book_vectors_db = book_vectors_db
@@ -72,10 +74,9 @@ class DataBaseNode:
         chunk_db = await  create_chunk_db()
         rag_node = await get_rag_node()
         llm_manager = await get_llm_manager()
-        tongyi_token_handler = await get_tongyi_token_handler()
         # 从数据库中读取system提示词
         system_prompt = await prompt_db.get_prompt_by_id(4)
-        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,tongyi_token_handler)
+        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node)
     async def should_create_knowledge_base(self,data:DataBaseState):
         """判断是否需要创建知识库,如果需要知识库,则返回对应的书籍"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()

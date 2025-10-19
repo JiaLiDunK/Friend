@@ -9,7 +9,7 @@ from pymilvus.milvus_client import IndexParams
 from src.friend.agents.node.RagNode import RagNode, get_rag_node
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db, KnowledgeBaseDB
 from src.friend.config.SettingConfig import settings
-from src.friend.entity.ai.AIResponseMessage import AIResponseMessage
+from src.friend.entity.ai.AIResponseMessage import QuestionId
 from src.friend.entity.ai.MilvusResponse import SearchContent
 
 
@@ -86,17 +86,16 @@ class MilvusNode:
         )
 
 
-    async def search_data_get_list(self,search_data:AIResponseMessage,top_k: int = 5,
+    async def search_data_get_list(self,search_data:QuestionId,top_k: int = 5,
         nprobe: int = 10):
         """生成的问题去指定的知识库中查询"""
-        logger.info(f"进入搜索页面{search_data.message}")
-        knowledge_base = await self.knowledge_base_db.get_data_by_id(search_data.knowledge_base_id)
-        logger.info(f"获取到的数据{knowledge_base}")
-        embedding = await self.rag_node.text_to_embedding_query_bge(search_data.message)
+        knowledge_base = await self.knowledge_base_db.get_data_by_id(search_data.id)
+        embedding = await self.rag_node.text_to_embedding_query_bge(search_data.question)
         search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
         # 切换知识库
         self.client.using_database(knowledge_base.data_base)
         self.client.load_collection(knowledge_base.collection)
+        # 检索
         data_list = await self._run_async(
             self.client.search,
             collection_name=knowledge_base.collection,
@@ -112,19 +111,30 @@ class MilvusNode:
         if len(milvus_list) == 0:
             return []
         # 下述是根据id获取前后文的内容
-        id_list:List[int] = [item.id for item in milvus_list]
-        id_expr = f"id in {id_list}"  # 生成 Milvus 查询条件
+        id_list = [item.id for item in milvus_list]
+        context_ids = list(set([i for id_ in id_list for i in (id_ - 1, id_, id_ + 1) if i >= 0]))
+        id_expr = f"id in {context_ids}"  # 生成 Milvus 查询条件
         response_list = await self._run_async(
             self.client.query,
             collection_name=knowledge_base.collection,
             filter=id_expr,
             output_fields=["content"],
         )
-        logger.info(f"查询到的数据{response_list}")
-        # 返回的格式不一样，有问题
-        result_list = [SearchContent(**item) for item in response_list]
-        for item in result_list:
-            logger.info(f"输出的结果:{item}")
+        all_docs = {item["id"]: item["content"] for item in response_list}
+        result_list = []
+        for item in milvus_list:
+            current_id = item.id
+            context_text = (
+                    all_docs.get(current_id - 1, "") +
+                    all_docs.get(current_id, "") +
+                    all_docs.get(current_id + 1, "")
+            )
+            result_list.append({
+                "id": current_id,
+                "content": context_text.strip(),
+                "distance": item.distance
+            })
+        # 返回的
         return result_list
 
     # ------------------------- 数据库与集合管理 -------------------------

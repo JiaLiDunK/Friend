@@ -1,15 +1,15 @@
+import asyncio
 import functools
 import time
 from datetime import datetime
 
 from loguru import logger
 
-from src.friend.app.core.AgentTokenHandler import get_tongyi_token_handler
+from src.friend.app.core.AgentTokenHandler import TongyiTokenHandler, _current_handler
 from src.friend.app.db.LlmCallLogsDB import LlmCallLogsDB, create_llm_call_logs
 from src.friend.entity.po.LlmCallLogs import LlmCallLogs
 
 
-# 注意:暂时用不到
 class LLMManager:
     def __init__(self,llm_call_logs:LlmCallLogsDB):
         self.llm_call_logs = llm_call_logs
@@ -22,6 +22,7 @@ class LLMManager:
         @functools.wraps(func)
         async def wrapper(*args,**kwargs):
             log = LlmCallLogs()
+            log.create_time = datetime.now()
             log.function_name = func.__name__
             start_time = time.perf_counter()
             try:
@@ -34,7 +35,6 @@ class LLMManager:
                 log.input_tokens = token_usage.get("input_tokens",0)
                 log.output_tokens = token_usage.get("output_tokens",0)
                 log.total_tokens = token_usage.get("total_tokens",0)
-                log.create_time = datetime.now()
                 log.call_type = 12
                 log.status = 14
                 log.count = 1
@@ -52,19 +52,20 @@ class LLMManager:
         @functools.wraps(func)
         async def wrapper(*args,**kwargs):
             log = LlmCallLogs()
+            log.create_time = datetime.now()
             log.function_name = func.__name__
             start_time = time.perf_counter()
+            handler = TongyiTokenHandler()
+            _current_handler.set(handler)  # 绑定当前上下文 handler
             try:
                 result = await func(*args, **kwargs) # 执行异步的方法
                 end_time = time.perf_counter()
                 log.elapsed_times = end_time - start_time
-                handler = await get_tongyi_token_handler()
                 token_usage = await handler.get_usage()
                 log.input_tokens = token_usage.get("input_tokens", 0)
                 log.output_tokens = token_usage.get("output_tokens", 0)
                 log.total_tokens = token_usage.get("total_tokens", 0)
                 log.model_name = token_usage.get("model_name",0)
-                log.create_time = datetime.now()
                 log.call_type = 13
                 log.status = 14
                 log.count = token_usage.get("count",0)
@@ -81,7 +82,11 @@ class LLMManager:
 
 
 
-async def get_llm_manager()->LLMManager:
-    if not hasattr(get_llm_manager,"instance"):
-        get_llm_manager.instance = await LLMManager.create()
+_singleton_lock = asyncio.Lock()
+
+async def get_llm_manager() -> LLMManager:
+    if not hasattr(get_llm_manager, "instance"):
+        async with _singleton_lock:
+            if not hasattr(get_llm_manager, "instance"):
+                get_llm_manager.instance = await LLMManager.create()
     return get_llm_manager.instance

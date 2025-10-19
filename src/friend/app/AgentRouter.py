@@ -12,9 +12,11 @@ agentRouter = APIRouter()
 @agentRouter.get("/test")
 async def one_test_one(data_one:MilvusNode = Depends(create_milvus_node)):
     data = AIResponseMessage(
-        knowledge_base_id=64,message="?")
+        knowledge_base_id=64,message="如何约妹子上床?")
     logger.info(f"进入了")
-    await data_one.search_data_get_list(data)
+    data_list = await data_one.search_data_get_list(data)
+    for data in data_list:
+        logger.info(f"data={data}")
     return {"message": "Hello, World!::"}
 
 @agentRouter.get("/knowledge_base")

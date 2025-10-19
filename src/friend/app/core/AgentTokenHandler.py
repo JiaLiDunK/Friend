@@ -1,4 +1,5 @@
 import re
+from contextvars import ContextVar
 
 from langchain_core.callbacks import BaseCallbackHandler
 from loguru import logger
@@ -29,8 +30,8 @@ class TongyiTokenHandler(BaseCallbackHandler):
         try:
             meta = response.generations[0][0].message.response_metadata
             usage = meta.get("token_usage",{})
-            self.input_tokens += usage.get("input_tokens")
-            self.output_tokens += usage.get("output_tokens")
+            self.input_tokens += usage.get("input_tokens",0)
+            self.output_tokens += usage.get("output_tokens",0)
             self.total_tokens += usage.get("total_tokens",0)
             self.count += 1
         except Exception as e:
@@ -49,7 +50,11 @@ class TongyiTokenHandler(BaseCallbackHandler):
             "model_name":self.model_name
         }
 
-async def get_tongyi_token_handler()->TongyiTokenHandler:
-    if not hasattr(get_tongyi_token_handler,"instance"):
-        get_tongyi_token_handler.instance = TongyiTokenHandler()
-    return get_tongyi_token_handler.instance
+_current_handler: ContextVar["TongyiTokenHandler"] = ContextVar("current_handler")
+
+async def get_tongyi_token_handler() -> TongyiTokenHandler:
+    handler = _current_handler.get(None)
+    if handler is None:
+        handler = TongyiTokenHandler()
+        _current_handler.set(handler)
+    return handler
