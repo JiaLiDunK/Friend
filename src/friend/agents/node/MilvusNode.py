@@ -10,7 +10,7 @@ from src.friend.agents.node.RagNode import RagNode, get_rag_node
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db, KnowledgeBaseDB
 from src.friend.config.SettingConfig import settings
 from src.friend.entity.ai.AIResponseMessage import QuestionId
-from src.friend.entity.ai.MilvusResponse import SearchContent
+from src.friend.entity.ai.MilvusResponse import SearchContent, SelectContent
 
 
 class MilvusNode:
@@ -87,7 +87,7 @@ class MilvusNode:
 
 
     async def search_data_get_list(self,search_data:QuestionId,top_k: int = 5,
-        nprobe: int = 10):
+        nprobe: int = 10)->List[SelectContent]:
         """生成的问题去指定的知识库中查询"""
         knowledge_base = await self.knowledge_base_db.get_data_by_id(search_data.id)
         embedding = await self.rag_node.text_to_embedding_query_bge(search_data.question)
@@ -121,7 +121,7 @@ class MilvusNode:
             output_fields=["content"],
         )
         all_docs = {item["id"]: item["content"] for item in response_list}
-        result_list = []
+        result_list:List[SelectContent] = []
         for item in milvus_list:
             current_id = item.id
             context_text = (
@@ -129,12 +129,12 @@ class MilvusNode:
                     all_docs.get(current_id, "") +
                     all_docs.get(current_id + 1, "")
             )
-            result_list.append({
-                "id": current_id,
-                "content": context_text.strip(),
-                "distance": item.distance
-            })
-        # 返回的
+            result_list.append(
+                SelectContent(id=current_id,
+                content=context_text.strip(),
+                distance=item.distance)
+            )
+        result_list.sort()
         return result_list
 
     # ------------------------- 数据库与集合管理 -------------------------

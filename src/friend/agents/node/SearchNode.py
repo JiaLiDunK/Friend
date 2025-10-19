@@ -1,6 +1,8 @@
 import json
+from typing import List
 
 from langchain_community.chat_models import ChatTongyi
+from langchain_ollama import OllamaLLM
 from loguru import logger
 
 from src.friend.agents.node.MilvusNode import create_milvus_node, MilvusNode
@@ -11,6 +13,7 @@ from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.app.db.PromptDB import create_prompt_db, PromptDB
 from src.friend.config.SettingConfig import settings
 from src.friend.entity.ai.AIResponseMessage import QuestionId
+from src.friend.entity.ai.MilvusResponse import SelectContent
 
 
 class SearchNode:
@@ -21,6 +24,10 @@ class SearchNode:
             model_kwargs={
                 "temperature": 0.0  # 让回答统一
             }
+        )
+        self.ollama = OllamaLLM(
+            model="huihui_ai/qwen3-abliterated:8b",
+            reasoning = True #这个是关闭思考模型的回复
         )
         self.milvus_node = milvus_node
         self.knowledge_base_db = knowledge_base_db
@@ -57,7 +64,7 @@ class SearchNode:
         data_json = json.loads(responses.content)
         data_list = [QuestionId(**item) for item in data_json]
         result_list = []
-        back_list = []
+        back_list:List[SelectContent] = []
         # 2.去知识库中查询相关的数据
         for item in data_list:
             result = await self.milvus_node.search_data_get_list(search_data=item)
@@ -65,8 +72,18 @@ class SearchNode:
         for data in result_list:
             for item in data:
                 back_list.append(item)
+        back_list.sort()
+        back_list = back_list[:5]
         logger.info(f"本次查询到了:{len(back_list)}")
-        return back_list
+        system_messages = "你是一个助手，回答用户的问题\n"
+        system_messages += f"用户的问题:{question}\n"
+        system_messages += "参考资料:\n"
+        count = 1
+        for item in back_list:
+            system_messages += f"{count}.{item.content}\n"
+            count += 1
+        ai_message = await self.llm.ainvoke(system_messages)
+        return ai_message.content
 
 
 async def get_search_node()-> SearchNode:
