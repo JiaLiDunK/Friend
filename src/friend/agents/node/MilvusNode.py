@@ -5,7 +5,6 @@ from typing import List, Optional
 from loguru import logger
 from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType
 from pymilvus.milvus_client import IndexParams
-
 from src.friend.agents.node.RagNode import RagNode, get_rag_node
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db, KnowledgeBaseDB
 from src.friend.config.SettingConfig import settings

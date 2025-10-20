@@ -3,7 +3,6 @@ from typing import List
 from sqlalchemy import func, delete
 from sqlmodel import select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books
@@ -32,18 +31,20 @@ class BookVectorsDB:
             await self.session.exec(statement)
     async def get_data_list(self,data:QueryTable):
         """根据条件查询数据"""
-        async with (self.session.begin()):
-            statement = select(BookVectors, Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
-            count_statement = select(func.count()).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
-            # 动态拼接查询条件
-            if data.keywords:
-                statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
-                count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
-            statement = statement.limit(data.pagesize).offset(data.page_num)
-            result = await self.session.exec(statement)
-            total = await self.session.exec(count_statement)
-            item = result.all()
-            count = total.one()
+        statement = select(BookVectors, Books.tittle).select_from(BookVectors).join(Books,
+                                                                                    BookVectors.uuid == Books.uuid,
+                                                                                    isouter=True)
+        count_statement = select(func.count()).select_from(BookVectors).join(Books, BookVectors.uuid == Books.uuid,
+                                                                             isouter=True)
+        # 动态拼接查询条件
+        if data.keywords:
+            statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
+            count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
+        statement = statement.limit(data.pagesize).offset(data.page_num)
+        result = await self.session.exec(statement)
+        total = await self.session.exec(count_statement)
+        item = result.all()
+        count = total.one()
         items = [
             BookToVectors(
                 id=bv.id,
@@ -54,7 +55,7 @@ class BookVectorsDB:
             )
             for bv, tittle in item
         ]
-        return TableData[BookToVectors](total=count,items=items)
+        return TableData[BookToVectors](total=count, items=items)
     async def del_data(self,data:BookVectors):
         """根据id删除数据"""
         async with self.session.begin():
@@ -62,18 +63,19 @@ class BookVectorsDB:
             await self.session.exec(statement)
     async def get_data_to_ai(self)->List[Books]:
         """获取前一百本书的名称"""
-        async with self.session.begin():
-            statement = select(BookVectors.id,Books.tittle).select_from(BookVectors).join(Books,BookVectors.uuid==Books.uuid,isouter=True)
-            statement = statement.where(BookVectors.knowledge_base_id == 0).limit(10).order_by(BookVectors.id)
-            result = await self.session.exec(statement)
-            item:List[Books] = result.all()
+        statement = select(BookVectors.id, Books.tittle).select_from(BookVectors).join(Books,
+                                                                                       BookVectors.uuid == Books.uuid,
+                                                                                       isouter=True)
+        statement = statement.where(BookVectors.knowledge_base_id == 0).limit(10).order_by(BookVectors.id)
+        result = await self.session.exec(statement)
+        item: List[Books] = result.all()
         return item
     async def get_uuid_list(self):
         """获取所有的uuid"""
-        async with self.session.begin():
-            statement = select(BookVectors.uuid,BookVectors.knowledge_base_id).where(BookVectors.type_id==8,BookVectors.knowledge_base_id!=0)
-            result = await self.session.exec(statement)
-            item = result.all()
+        statement = select(BookVectors.uuid, BookVectors.knowledge_base_id).where(BookVectors.type_id == 8,
+                                                                                  BookVectors.knowledge_base_id != 0)
+        result = await self.session.exec(statement)
+        item = result.all()
         return item
 
 # 工厂函数

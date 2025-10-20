@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 from loguru import logger
-
 from src.friend.agents.node.ReadNode import ReadNode
 from src.friend.entity.R import R
 

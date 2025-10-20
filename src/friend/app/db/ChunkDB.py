@@ -3,7 +3,6 @@ from typing import List
 from sqlalchemy import func, update, delete
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.entity.vo.QueryTable import QueryTable
@@ -21,14 +20,14 @@ class ChunkDB:
 
     async def get_data_list(self,data:QueryTable):
         """根据uuid获取数据"""
-        async with self.session.begin():
-            statement = select(Chunk).where(Chunk.uuid==data.keywords).order_by(Chunk.order_id).limit(data.pagesize).offset(data.page_num)
-            count_statement = select(func.count()).select_from(Chunk).where(Chunk.uuid==data.keywords)
-            result = await self.session.exec(statement)
-            total = await self.session.exec(count_statement)
-            item = result.all()
-            count = total.one()
-            return TableData[Chunk](total=count,items=item)
+        statement = select(Chunk).where(Chunk.uuid == data.keywords).order_by(Chunk.order_id).limit(
+            data.pagesize).offset(data.page_num)
+        count_statement = select(func.count()).select_from(Chunk).where(Chunk.uuid == data.keywords)
+        result = await self.session.exec(statement)
+        total = await self.session.exec(count_statement)
+        item = result.all()
+        count = total.one()
+        return TableData[Chunk](total=count, items=item)
     async def update_data(self,data:Chunk):
         """更新数据"""
         async with self.session.begin():

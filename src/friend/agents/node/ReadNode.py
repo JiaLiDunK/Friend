@@ -4,7 +4,6 @@ import uuid
 from typing import List
 
 from loguru import logger
-
 from src.friend.app.db.BooksDB import create_books_db
 from src.friend.app.db.ChunkDB import create_chunk_db
 from src.friend.entity.po.Books import Books

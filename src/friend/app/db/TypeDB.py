@@ -14,15 +14,15 @@ class TypeDB:
 
     async def insert_type(self,type_data: SysType):
         """插入数据"""
-        async with self.session.begin():
-            data = await self.get_type_name(type_data.type_name)
-            if data is not None:
-                return "类型已存在"
-            else:
-                # 移除 id，防止手动传入重复主键
-                type_data.id = None
+        data = await self.get_type_name(type_data.type_name)
+        if data is not None:
+            return "类型已存在"
+        else:
+            # 移除 id，防止手动传入重复主键
+            type_data.id = None
+            async with self.session.begin():
                 self.session.add(type_data)
-                return "类型添加成功"
+        return "类型添加成功"
 
 
     async def get_type_name(self,type_name: str):
@@ -34,19 +34,18 @@ class TypeDB:
 
     async def get_type_list(self,data: QueryTable):
         """根据参数查询数据库"""
-        async with self.session.begin():
-            statement = select(SysType)
-            count_statement = select(func.count()).select_from(SysType)
-            # 动态拼接查询条件
-            if data.keywords:
-                statement = statement.where(SysType.type_name.like(f"%{data.keywords}%"))
-                count_statement = count_statement.where(SysType.type_name.like(f"%{data.keywords}%"))
-            statement = statement.limit(data.pagesize).offset(data.page_num)
-            result = await self.session.exec(statement)
-            total = await self.session.exec(count_statement)
-            item = result.all()
-            count = total.one()
-            return TableData[SysType](total=count,items=item)
+        statement = select(SysType)
+        count_statement = select(func.count()).select_from(SysType)
+        # 动态拼接查询条件
+        if data.keywords:
+            statement = statement.where(SysType.type_name.like(f"%{data.keywords}%"))
+            count_statement = count_statement.where(SysType.type_name.like(f"%{data.keywords}%"))
+        statement = statement.limit(data.pagesize).offset(data.page_num)
+        result = await self.session.exec(statement)
+        total = await self.session.exec(count_statement)
+        item = result.all()
+        count = total.one()
+        return TableData[SysType](total=count, items=item)
     async def update_type(self,type_data: SysType):
         """修改数据"""
         async with self.session.begin():

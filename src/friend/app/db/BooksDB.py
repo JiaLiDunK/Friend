@@ -19,19 +19,18 @@ class BooksDB:
 
     async def get_data_list(self,data:QueryTable):
         """根据条件获取书籍的内容"""
-        async with self.session.begin():
-            statement = select(Books)
-            count_statement = select(func.count()).select_from(Books)
-            # 动态拼接查询条件
-            if data.keywords:
-                statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
-                count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
-            statement = statement.limit(data.pagesize).offset(data.page_num).order_by(Books.type_id)
-            result = await self.session.exec(statement)
-            total = await self.session.exec(count_statement)
-            item = result.all()
-            count = total.one()
-            book_list = [Books.model_validate(book) for book in item]
+        statement = select(Books)
+        count_statement = select(func.count()).select_from(Books)
+        # 动态拼接查询条件
+        if data.keywords:
+            statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
+            count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
+        statement = statement.limit(data.pagesize).offset(data.page_num).order_by(Books.type_id)
+        result = await self.session.exec(statement)
+        total = await self.session.exec(count_statement)
+        item = result.all()
+        count = total.one()
+        book_list = [Books.model_validate(book) for book in item]
         return TableData[Books](total=count,items=book_list).model_dump()
     async def  update_data(self,data:Books):
         """更新书籍的信息"""
