@@ -1,5 +1,6 @@
-from friend.config.DBConfig import async_session
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from src.friend.config.DBConfig import async_session
 
 
 class AgentsDB:

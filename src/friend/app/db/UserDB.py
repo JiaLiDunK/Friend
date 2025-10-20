@@ -2,6 +2,7 @@ from typing import AsyncGenerator
 
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.SysUser import SysUser
 
@@ -32,6 +33,6 @@ class UserDB:
 
 
 # 工厂函数  如果milvus开启多线程查询,可能需要改成这种写法
-async def create_user_db() -> AsyncGenerator[UserDB, None]:
+async def create_user_db() -> UserDB:
     async with async_session() as session:
-        yield  UserDB(session)
+        return  UserDB(session)
