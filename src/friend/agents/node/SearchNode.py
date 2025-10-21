@@ -57,6 +57,7 @@ class SearchNode:
         return data
     async def expand_and_retrieve(self,question:str):
         """这个方法是扩充问题然后查询知识库"""
+        # 先这样写吧，感觉问题不少
         # 1.获取系统提示词以及知识库相关的信息
         responses = await self.send_message_llm(question)
         responses = responses.message
@@ -66,7 +67,7 @@ class SearchNode:
         back_list:List[SelectContent] = []
         # 2.去知识库中查询相关的数据
         for item in data_list:
-            result = await self.milvus_node.search_data_get_list(search_data=item)
+            result = await self.milvus_node.search_data_get_list(search_data=item)# 这块百分百有问题
             result_list.append(result)
         for data in result_list:
             for item in data:

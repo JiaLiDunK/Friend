@@ -29,3 +29,12 @@ class ChatNode:
     async def chat(self,data):
         """聊天的模型"""
         system_prompt = await self.prompt_db.get_prompt_by_id(7)
+        result = await self.llm.ainvoke(system_prompt + "\n" + data)
+        #启动后台任务（不会阻塞）
+        # asyncio.create_task(self.process_book(data, result))
+        return result
+
+async def get_chat_node()-> ChatNode:
+    if not hasattr(get_chat_node,"instance"):
+        get_chat_node.instance = await ChatNode.create()
+    return get_chat_node.instance

@@ -8,3 +8,5 @@ class AIResponseMessage(BaseModel):
 class QuestionId(BaseModel):
     question:str
     id:int
+    data_base:str
+    collection:str

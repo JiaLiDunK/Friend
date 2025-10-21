@@ -56,7 +56,6 @@ class MilvusNode:
     # ------------------------- 数据操作 -------------------------
     async def insert_into_data(self, data,data_base_name,collection_name):
         """插入数据"""
-        logger.info(f"看看有没有进入这块{data_base_name}====={collection_name}")
         def sync_insert():
             self.client.using_database(data_base_name)
             logger.info(f"切换了数据库 {data_base_name}")
@@ -88,16 +87,15 @@ class MilvusNode:
     async def search_data_get_list(self,search_data:QuestionId,top_k: int = 5,
         nprobe: int = 10)->List[SelectContent]:
         """生成的问题去指定的知识库中查询"""
-        knowledge_base = await self.knowledge_base_db.get_data_by_id(search_data.id)
         embedding = await self.rag_node.text_to_embedding_query_bge(search_data.question)
         search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
         # 切换知识库
-        self.client.using_database(knowledge_base.data_base)
-        self.client.load_collection(knowledge_base.collection)
+        self.client.using_database(search_data.data_base)
+        self.client.load_collection(search_data.collection)
         # 检索
         data_list = await self._run_async(
             self.client.search,
-            collection_name=knowledge_base.collection,
+            collection_name=search_data.collection,
             data=[embedding],
             anns_field="vector",
             search_params=search_params,
@@ -115,7 +113,7 @@ class MilvusNode:
         id_expr = f"id in {context_ids}"  # 生成 Milvus 查询条件
         response_list = await self._run_async(
             self.client.query,
-            collection_name=knowledge_base.collection,
+            collection_name=search_data.collection,
             filter=id_expr,
             output_fields=["content"],
         )

@@ -1,5 +1,3 @@
-from typing import AsyncGenerator
-
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 

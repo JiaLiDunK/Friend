@@ -31,7 +31,7 @@ async def read_and_out(path: str,
     logger.info(f"读取的路径{path}")
     await reading.read_path(path)
     return R.ok().messages("处理完成")
-
+# 下述的方法暂时不知道是否可用
 @readAndOutRouter.post("/repartition")
 async def repartition(uuid_list:List[str],
                       reading: ReadNode = Depends(get_read_node)):

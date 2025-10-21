@@ -5,7 +5,10 @@ import re
 import string
 from typing import List, Any
 
+import easyocr
 import ebooklib
+import fitz
+import numpy as np
 import pdfplumber
 from bs4 import BeautifulSoup
 from ebooklib import epub
@@ -85,11 +88,28 @@ async def extract_text_pdf_safe(path: str) -> str:
                     continue
         # 如果 pdfplumber 提取为空，走 OCR ,主动放弃
         if not text.strip():
-            text = ""
+            text = ocr_text(path)
     except Exception:
         # pdfplumber 打开失败，走 OCR,主动放弃
-        text = ""
+        text = ocr_text(path)
     return text
+
+async def ocr_text(path:str)->str:
+    """ocr识别文本"""
+    all_text = ""
+    reader = easyocr.Reader(['ch_sim', 'en'])
+    pdf_document = fitz.open(path)
+    for page_number in range(len(pdf_document)):
+        page = pdf_document[page_number]
+        pix = page.get_pixmap()
+        # 转成 numpy 数组
+        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+        # 如果图片是 RGBA，转成 RGB
+        if pix.n == 4:
+            img = img[:, :, :3]
+        results = reader.readtext(img)
+        all_text += "".join([result[1] for result in results])
+    return all_text
 
 async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[str]]:
     """
@@ -175,12 +195,12 @@ async def chunk_docs(all_text:str):
         chunk_size=612,
         chunk_overlap=100,
         separators=[
-        "\n\n",  # 段落
-        "\n",  # 单换行
         "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
         ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
+        "\n\n",  # 段落
         "，", ",",  # 中文、英文逗号
         "：", ":",  # 中文、英文冒号
+        "\n",  # 单换行
         " ",  # 空格
         ""  # 最后兜底（强制切割）
 ]

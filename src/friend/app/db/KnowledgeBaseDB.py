@@ -64,6 +64,12 @@ class KnowledgeBaseDB:
         result = await self.session.exec(statement)
         item = result.one()
         return item
+    async def get_data_by_id_list(self,id_list:List[int])->List[KnowledgeBase]:
+        """根据id列表获取配置信息"""
+        statement = select(KnowledgeBase).where(KnowledgeBase.id.in_(id_list))
+        result = await self.session.exec(statement)
+        item = result.all()
+        return item
 
 
 # 工厂函数(内部业务调用这个)
