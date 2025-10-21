@@ -7,7 +7,7 @@ from typing import List, Any
 
 import easyocr
 import ebooklib
-import fitz
+from pdf2image import convert_from_path
 import numpy as np
 import pdfplumber
 from bs4 import BeautifulSoup
@@ -96,19 +96,11 @@ async def extract_text_pdf_safe(path: str) -> str:
 
 async def ocr_text(path:str)->str:
     """ocr识别文本"""
+    # 重写
     all_text = ""
     reader = easyocr.Reader(['ch_sim', 'en'])
-    pdf_document = fitz.open(path)
-    for page_number in range(len(pdf_document)):
-        page = pdf_document[page_number]
-        pix = page.get_pixmap()
-        # 转成 numpy 数组
-        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
-        # 如果图片是 RGBA，转成 RGB
-        if pix.n == 4:
-            img = img[:, :, :3]
-        results = reader.readtext(img)
-        all_text += "".join([result[1] for result in results])
+    pdf_document = convert_from_path(path)
+
     return all_text
 
 async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[str]]:

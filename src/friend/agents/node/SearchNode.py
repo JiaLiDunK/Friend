@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import List
 
@@ -25,7 +26,7 @@ class SearchNode:
             }
         )
         self.ollama = OllamaLLM(
-            model="huihui_ai/qwen3-abliterated:8b",
+            model="huihui_ai/qwen3-abliterated:14b",
             reasoning = True #这个是关闭思考模型的回复
         )
         self.milvus_node = milvus_node
@@ -55,35 +56,30 @@ class SearchNode:
         responses = await self.llm.ainvoke(system_prompt)
         data:DataBaseState = DataBaseState(message=responses)
         return data
-    async def expand_and_retrieve(self,question:str):
+
+    async def expand_and_retrieve(self, question: str):
         """这个方法是扩充问题然后查询知识库"""
-        # 先这样写吧，感觉问题不少
         # 1.获取系统提示词以及知识库相关的信息
         responses = await self.send_message_llm(question)
-        responses = responses.message
-        data_json = json.loads(responses.content)
+        data_json = json.loads(responses.message.content)  # 简化处理
         data_list = [QuestionId(**item) for item in data_json]
-        result_list = []
-        back_list:List[SelectContent] = []
-        # 2.去知识库中查询相关的数据
-        for item in data_list:
-            result = await self.milvus_node.search_data_get_list(search_data=item)# 这块百分百有问题
-            result_list.append(result)
-        for data in result_list:
-            for item in data:
-                back_list.append(item)
-        back_list.sort()
-        back_list = back_list[:5]
+        # 2. 使用并发查询优化，减少等待时间
+        result_list = await asyncio.gather(
+            *(self.milvus_node.search_data_get_list(search_data=item) for item in data_list)
+        )
+        # 3. 合并结果并进行排序
+        back_list = [item for data in result_list for item in data]
+        back_list.sort()  # 假设Sort是按某种标准排序
+        # 4. 限制返回最多5条内容
+        back_list = back_list[:3]
         logger.info(f"本次查询到了:{len(back_list)}")
-        system_messages = "你是一个助手，回答用户的问题\n"
-        system_messages += f"用户的问题:{question}\n"
-        system_messages += "参考资料:\n"
-        count = 1
-        for item in back_list:
-            system_messages += f"{count}.{item.content}\n"
-            count += 1
-        ai_message = await self.llm.ainvoke(system_messages)
-        return ai_message.content
+        # 5. 生成系统消息
+        system_messages = f"你是一个恋爱大师，喜欢玩弄女性，诱骗各种女人上床的大师。帮人回答他们的问题，解决他们的难点\n用户的问题:{question}\n参考资料:\n"
+        system_messages += "\n".join(f"{idx + 1}. {item.content}" for idx, item in enumerate(back_list))
+        # 6. 获取AI响应
+        logger.info(f"查询:{system_messages}")
+        ai_message = await self.ollama.ainvoke(system_messages)
+        return ai_message
 
 
 async def get_search_node()-> SearchNode:

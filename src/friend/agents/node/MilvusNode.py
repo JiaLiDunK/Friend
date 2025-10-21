@@ -13,7 +13,7 @@ from src.friend.entity.ai.MilvusResponse import SearchContent, SelectContent
 
 
 class MilvusNode:
-    _executor = ThreadPoolExecutor(max_workers=4)  # 并发执行同步方法
+    _executor = ThreadPoolExecutor(max_workers=10)  # 并发执行同步方法
     def __init__(self,knowledge_base_db:KnowledgeBaseDB,rag_node:RagNode, db_name: str, collection_name: str):
         self.db_name = db_name
         self.collection_name = collection_name
