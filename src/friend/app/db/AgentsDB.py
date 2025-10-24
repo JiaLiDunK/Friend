@@ -9,6 +9,6 @@ class AgentsDB:
 
 
 # 工厂函数
-async def create_agents_db() -> AgentsDB:
+async def create_agents_db():
     async with async_session() as session:
-        return AgentsDB(session)
+        yield AgentsDB(session)

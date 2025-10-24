@@ -11,6 +11,6 @@ class LlmCallLogsDB:
         async with self.session.begin():
             self.session.add(data)
 # 工厂函数
-async def create_llm_call_logs()->LlmCallLogsDB:
+async def create_llm_call_logs():
     async with async_session() as session:
-        return LlmCallLogsDB(session)
+        yield LlmCallLogsDB(session)

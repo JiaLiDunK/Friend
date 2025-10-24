@@ -31,6 +31,6 @@ class UserDB:
 
 
 # 工厂函数  如果milvus开启多线程查询,可能需要改成这种写法
-async def create_user_db() -> UserDB:
+async def create_user_db():
     async with async_session() as session:
-        return  UserDB(session)
+        yield UserDB(session)

@@ -39,6 +39,6 @@ class BooksDB:
             await self.session.exec(statement)
 
 # 工厂函数（业务内部调用用这个）
-async def create_books_db() -> BooksDB:
+async def create_books_db():
     async with async_session() as session:
-        return BooksDB(session)
+        yield BooksDB(session)

@@ -47,6 +47,6 @@ class PromptDB:
 
 
 #工厂函数
-async def create_prompt_db() -> PromptDB:
+async def create_prompt_db():
     async with async_session() as session:
-        return PromptDB(session)
+        yield PromptDB(session)
