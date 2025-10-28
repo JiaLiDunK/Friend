@@ -42,3 +42,6 @@ class BooksDB:
 async def create_books_db():
     async with async_session() as session:
         yield BooksDB(session)
+async def create_books_db_by_load():
+    async with async_session() as session:
+        return BooksDB(session)
