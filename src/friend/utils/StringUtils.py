@@ -5,9 +5,10 @@ import re
 import string
 from typing import List, Any
 
+import cv2
 import easyocr
 import ebooklib
-from pdf2image import convert_from_path
+import fitz
 import numpy as np
 import pdfplumber
 from bs4 import BeautifulSoup
@@ -88,19 +89,55 @@ async def extract_text_pdf_safe(path: str) -> str:
                     continue
         # 如果 pdfplumber 提取为空，走 OCR ,主动放弃
         if not text.strip():
-            text = ocr_text(path)
+            text = await ocr_text(path)
     except Exception:
         # pdfplumber 打开失败，走 OCR,主动放弃
-        text = ocr_text(path)
+        text = await ocr_text(path)
     return text
 
-async def ocr_text(path:str)->str:
-    """ocr识别文本"""
-    # 重写
+async def ocr_text(path: str) -> str:
+    """OCR识别整本PDF并返回完整字符串"""
+    # 初始化OCR引擎（建议全局加载，避免重复加载权重）
+    reader = easyocr.Reader(['ch_sim', 'en'], gpu=True)
     all_text = ""
-    reader = easyocr.Reader(['ch_sim', 'en'])
-    pdf_document = convert_from_path(path)
+    pdf_document = fitz.open(path)
+    total_pages = len(pdf_document)
+    for page_number in range(total_pages):
+        page = pdf_document[page_number]
+        # 提高渲染分辨率
+        zoom = 3
+        mat = fitz.Matrix(zoom, zoom)
+        pix = page.get_pixmap(matrix=mat)
+        # 转为 NumPy 数组
+        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+        if pix.n == 4:
+            img = img[:, :, :3]
+        # 灰度化
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        # 二值化增强
+        thresh = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY, 11, 2
+        )
+        # 去噪
+        denoised = cv2.fastNlMeansDenoising(thresh, h=30)
 
+        # 识别（按段落输出）
+        results = reader.readtext(
+            denoised,
+            detail=0,
+            paragraph=True,
+            contrast_ths=0.05,
+            adjust_contrast=0.7,
+            text_threshold=0.4
+        )
+        page_text = "".join(results)
+        all_text += page_text + "\n"
+        # 给事件循环一个机会（避免长时间阻塞）
+        await asyncio.sleep(0)
+        logger.info(f"识别完{page_number}")
+
+    pdf_document.close()
     return all_text
 
 async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[str]]:

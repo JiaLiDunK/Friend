@@ -73,6 +73,6 @@ class KnowledgeBaseDB:
 
 
 # 工厂函数(内部业务调用这个)
-async def create_knowledge_base_db() -> KnowledgeBaseDB:
+async def create_knowledge_base_db():
     async with  async_session() as session:
-        return KnowledgeBaseDB(session)
+        yield KnowledgeBaseDB(session)

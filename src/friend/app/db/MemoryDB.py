@@ -38,6 +38,6 @@ class MemoryDB:
 
 
 # 工厂函数
-async def create_memory_db() -> MemoryDB:
+async def create_memory_db():
     async with async_session() as session:
-        return MemoryDB(session)
+        yield MemoryDB(session)

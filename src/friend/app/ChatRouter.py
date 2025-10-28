@@ -9,6 +9,10 @@ chatRouter = APIRouter()
 
 @chatRouter.post("/chatTest")
 async def chat_test(data:SearchNode=Depends(get_search_node)):
-    logger.info("chatTest")
-    result = await data.expand_and_retrieve("如何约妹子上床?")
+    logger.info("知识库检索")
+    result = await data.expand_and_retrieve("")
     return result
+@chatRouter.post("/girlfriend")
+async def girlfriend():
+    logger.info("进入聊天页面")
+    return "ok了"

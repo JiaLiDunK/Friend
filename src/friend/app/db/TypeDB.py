@@ -54,6 +54,6 @@ class TypeDB:
 
 
 # 工厂函数
-async def create_type_db() -> TypeDB:
+async def get_type_db():
     async with async_session() as session:
-        return TypeDB(session)
+        yield TypeDB(session)

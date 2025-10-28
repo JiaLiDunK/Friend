@@ -4,8 +4,9 @@ import uuid
 from typing import List
 
 from loguru import logger
-from src.friend.app.db.BooksDB import create_books_db
-from src.friend.app.db.ChunkDB import create_chunk_db
+
+from src.friend.app.db.BooksDB import create_books_db,create_books_db_by_load
+from src.friend.app.db.ChunkDB import create_chunk_db,create_chunk_db_by_load
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document, clean_text, remove_substring, \
@@ -18,8 +19,8 @@ class ReadNode:
         self.chunk_db = chunk_db
     @classmethod
     async def create(cls):
-        books_db = await create_books_db()
-        chunk_db = await create_chunk_db()
+        books_db = await create_books_db_by_load()
+        chunk_db = await create_chunk_db_by_load()
         return cls(books_db, chunk_db)
     async  def clear_string_task(self,text:str):
         """清除所有文件中的指定内容"""
@@ -74,8 +75,8 @@ class ReadNode:
     async def read_and_save(self,paths: List[str]):
         """分割保存指定目录下的文本文件"""
         # 防止并发复用
-        books_db = await create_books_db()
-        chunk_db = await create_chunk_db()
+        books_db = await create_books_db_by_load()
+        chunk_db = await create_chunk_db_by_load()
         for path in paths:
             try:
                 sole_id = str(uuid.uuid4())

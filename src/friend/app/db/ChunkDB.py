@@ -71,6 +71,10 @@ class ChunkDB:
         return result.all()
 
 # 工厂函数（业务内部调用用这个）
-async def create_chunk_db() -> ChunkDB:
+async def create_chunk_db():
+    async with async_session() as session:
+        yield ChunkDB(session)
+# 这个是给切割文档用的
+async def create_chunk_db_by_load():
     async with async_session() as session:
         return ChunkDB(session)

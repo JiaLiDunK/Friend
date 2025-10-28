@@ -79,6 +79,6 @@ class BookVectorsDB:
         return item
 
 # 工厂函数
-async def create_book_vectors_db() -> BookVectorsDB:
+async def create_book_vectors_db():
     async with async_session() as session:
-        return BookVectorsDB(session)
+        yield BookVectorsDB(session)
