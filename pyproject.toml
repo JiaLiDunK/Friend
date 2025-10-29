@@ -38,7 +38,6 @@ pdfplumber = "0.11.7"
 redis = "6.4.0"
 easyocr = "1.7.2"
 pdf2image  = "1.17.0"
-opencv-python = "4.12.0.88"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

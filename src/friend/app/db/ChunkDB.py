@@ -27,7 +27,7 @@ class ChunkDB:
         total = await self.session.exec(count_statement)
         item = result.all()
         count = total.one()
-        return TableData[Chunk](total=count, items=item)
+        return TableData[Chunk](total=count, items=item).model_dump()
     async def update_data(self,data:Chunk):
         """更新数据"""
         async with self.session.begin():
