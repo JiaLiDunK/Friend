@@ -1,21 +1,22 @@
 import asyncio
+import base64
 import os
 import random
 import re
 import string
+from io import BytesIO
 from typing import List, Any
-
-import cv2
-import easyocr
 import ebooklib
 import fitz
-import numpy as np
 import pdfplumber
+from PIL import Image
 from bs4 import BeautifulSoup
 from ebooklib import epub
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader, UnstructuredWordDocumentLoader
+from langchain_core.messages import HumanMessage
+from langchain_ollama import ChatOllama
 from loguru import logger
 from pdfplumber.utils.exceptions import PdfminerException
 
@@ -95,50 +96,133 @@ async def extract_text_pdf_safe(path: str) -> str:
         text = await ocr_text(path)
     return text
 
-async def ocr_text(path: str) -> str:
-    """OCR识别整本PDF并返回完整字符串"""
-    # 初始化OCR引擎（建议全局加载，避免重复加载权重）
-    reader = easyocr.Reader(['ch_sim', 'en'], gpu=True)
-    all_text = ""
-    pdf_document = fitz.open(path)
-    total_pages = len(pdf_document)
-    for page_number in range(total_pages):
-        page = pdf_document[page_number]
-        # 提高渲染分辨率
-        zoom = 3
-        mat = fitz.Matrix(zoom, zoom)
-        pix = page.get_pixmap(matrix=mat)
-        # 转为 NumPy 数组
-        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
-        if pix.n == 4:
-            img = img[:, :, :3]
-        # 灰度化
-        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        # 二值化增强
-        thresh = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY, 11, 2
-        )
-        # 去噪
-        denoised = cv2.fastNlMeansDenoising(thresh, h=30)
+async def pdf_to_images(pdf_path):
+    """
+    将PDF文件转换为图片列表
 
-        # 识别（按段落输出）
-        results = reader.readtext(
-            denoised,
-            detail=0,
-            paragraph=True,
-            contrast_ths=0.05,
-            adjust_contrast=0.7,
-            text_threshold=0.4
-        )
-        page_text = "".join(results)
-        all_text += page_text + "\n"
-        # 给事件循环一个机会（避免长时间阻塞）
-        await asyncio.sleep(0)
-        logger.info(f"识别完{page_number}")
+    Args:
+        pdf_path (str): PDF文件路径
+
+    Returns:
+        list: 包含每页图片的列表
+    """
+    images = []
+    pdf_document = fitz.open(pdf_path)
+
+    for page_num in range(len(pdf_document)):
+        page = pdf_document[page_num]
+        # 设置较高的缩放因子以提高图像质量
+        mat = fitz.Matrix(2.0, 2.0)
+        pix = page.get_pixmap(matrix=mat)
+
+        # 转换为PIL Image
+        img_data = pix.tobytes("ppm")
+        img = Image.open(BytesIO(img_data))
+        # 确保图片是RGB模式
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        images.append(img)
 
     pdf_document.close()
+    return images
+
+async def image_to_base64(image):
+    """
+    将PIL Image转换为base64编码
+
+    Args:
+        image (PIL.Image): 图片对象
+
+    Returns:
+        str: base64编码的图片数据
+    """
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
+
+async def ocr_with_qwen_vl_langchain(image, prompt="请识别图片中的文字内容,只返回图片中文字的内容,去掉多余的空格或者换行符,如果没有可返回的文字内容，直接返回一个空字符串"""):
+    """
+    使用LangChain调用本地Qwen2.5-VL模型进行OCR识别
+
+    Args:
+        image (PIL.Image): 要识别的图片
+        prompt (str): 提示词
+
+    Returns:
+        str: 识别的文字内容
+    """
+    # 将图片转换为base64
+    img_base64 = await image_to_base64(image)
+
+    # 初始化ChatOllama模型（支持视觉模型）
+    llm = ChatOllama(model="qwen2.5vl:7b")
+
+    # 构造消息内容
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": prompt},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{img_base64}"
+                }
+            },
+        ]
+    )
+
+    try:
+        # 调用模型
+        response = await llm.ainvoke([message])
+        return response.content
+    except Exception as e:
+        print(f"请求异常: {e}")
+        return ""
+async def ocr_text(path: str) -> str:
+    """OCR识别整本PDF并返回完整字符串，使用LLM视觉模型进行OCR识别"""
+    logger.info(f"进入了OCR识别中")
+    all_text = ""
+
+    try:
+        pdf_document = fitz.open(path)
+        total_pages = len(pdf_document)
+
+        for page_number in range(total_pages):
+            try:
+                page = pdf_document[page_number]
+                # 提高渲染分辨率
+                zoom = 2.0
+                mat = fitz.Matrix(zoom, zoom)
+                pix = page.get_pixmap(matrix=mat)
+
+                # 转换为PIL Image
+                img_data = pix.tobytes("ppm")
+                image = Image.open(BytesIO(img_data))
+                # 确保图片是RGB模式
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                # 使用LLM视觉模型进行OCR识别
+                page_text = await ocr_with_qwen_vl_langchain(
+                    image,
+                    "请识别图片中的文字内容，只返回图片中文字的内容，去掉多余的空格或者换行符，如果没有可返回的文字内容，直接返回一个空字符串"
+                )
+                all_text += page_text
+                # 给事件循环一个机会（避免长时间阻塞）
+                await asyncio.sleep(0)
+                logger.info(f"识别完{page_number}")
+                logger.info(f"识别结果:\n {page_text}")
+            except Exception as e:
+                logger.error(f"处理第{page_number}页时出错: {e}")
+                continue
+    except Exception as e:
+        logger.error(f"打开PDF文件失败: {e}")
+        raise
+    finally:
+        # 确保资源释放
+        if 'pdf_document' in locals():
+            pdf_document.close()
     return all_text
+
 
 async def split_all_files_in_dir(dir_path: str, parts: int = 10) -> List[List[str]]:
     """
