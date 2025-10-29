@@ -11,7 +11,13 @@ from src.friend.entity.vo.TableData import TableData
 class PromptDB:
     def __init__(self,session: AsyncSession):
         self.session = session
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return PromptDB(self.session)
 
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_data(self,data: MessagePrompt):
         """插入数据"""
         # type_id = 2先默认是2
@@ -50,3 +56,6 @@ class PromptDB:
 async def create_prompt_db():
     async with async_session() as session:
         yield PromptDB(session)
+async def create_prompt_db_by_load():
+    async with async_session() as session:
+        return PromptDB(session)

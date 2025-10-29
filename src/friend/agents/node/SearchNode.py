@@ -74,7 +74,7 @@ class SearchNode:
         back_list = back_list[:3]
         logger.info(f"本次查询到了:{len(back_list)}")
         # 5. 生成系统消息
-        system_messages = f"你是一个恋爱大师，喜欢玩弄女性，诱骗各种女人上床的大师。帮人回答他们的问题，解决他们的难点\n用户的问题:{question}\n参考资料:\n"
+        system_messages = f"你是一个大师。帮人回答他们的问题，解决他们的难点\n用户的问题:{question}\n参考资料:\n"
         system_messages += "\n".join(f"{idx + 1}. {item.content}" for idx, item in enumerate(back_list))
         # 6. 获取AI响应
         logger.info(f"查询:{system_messages}")

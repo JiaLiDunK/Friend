@@ -13,7 +13,13 @@ from src.friend.entity.vo.TypeOptions import TypeOptions
 class KnowledgeBaseDB:
     def __init__(self,session: AsyncSession):
         self.session = session
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return KnowledgeBaseDB(self.session)
 
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_data(self,data:KnowledgeBase):
         """插入数据"""
         async with self.session.begin():
@@ -76,3 +82,6 @@ class KnowledgeBaseDB:
 async def create_knowledge_base_db():
     async with  async_session() as session:
         yield KnowledgeBaseDB(session)
+async def create_knowledge_base_db_by_load():
+    async with  async_session() as session:
+        return KnowledgeBaseDB(session)

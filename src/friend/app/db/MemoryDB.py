@@ -9,7 +9,13 @@ from src.friend.entity.po.Memory import Memory
 class MemoryDB:
     def __init__(self,session:AsyncSession):
         self.session = session
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return MemoryDB(self.session)
 
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_data(self,data:Memory):
         """插入数据"""
         async with self.session.begin():
@@ -41,3 +47,6 @@ class MemoryDB:
 async def create_memory_db():
     async with async_session() as session:
         yield MemoryDB(session)
+async def create_memory_db_by_load():
+    async with async_session() as session:
+        return MemoryDB(session)

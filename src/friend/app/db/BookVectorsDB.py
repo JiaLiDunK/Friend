@@ -14,7 +14,13 @@ from src.friend.entity.vo.TableData import TableData
 class BookVectorsDB:
     def __init__(self,session: AsyncSession):
         self.session = session
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return BookVectorsDB(self.session)
 
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_data(self,data:BookVectors):
         """插入书籍记录"""
         async with self.session.begin():
@@ -82,3 +88,6 @@ class BookVectorsDB:
 async def create_book_vectors_db():
     async with async_session() as session:
         yield BookVectorsDB(session)
+async def create_book_vectors_db_by_load():
+    async with async_session() as session:
+        return BookVectorsDB(session)

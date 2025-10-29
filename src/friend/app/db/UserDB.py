@@ -9,6 +9,14 @@ class UserDB:
     def __init__(self,session: AsyncSession):
         self.session = session
 
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return UserDB(self.session)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
+
     async def insert_user(self, user: SysUser) -> str:
         """插入数据"""
         existing_user = await self.get_by_email(user.email)
@@ -34,3 +42,6 @@ class UserDB:
 async def create_user_db():
     async with async_session() as session:
         yield UserDB(session)
+async def create_user_db_by_load():
+    async with async_session() as session:
+        return UserDB(session)

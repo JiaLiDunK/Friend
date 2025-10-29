@@ -12,7 +12,13 @@ from src.friend.entity.vo.TableData import TableData
 class ChunkDB:
     def __init__(self,session: AsyncSession):
         self.session = session
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return ChunkDB(self.session)
 
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_list(self,data_list:List[Chunk]):
         """批量插入数据"""
         async with self.session.begin():

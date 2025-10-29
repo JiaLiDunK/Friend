@@ -89,7 +89,7 @@ async def extract_text_pdf_safe(path: str) -> str:
                     # 当前页字体异常，跳过
                     continue
         # 如果 pdfplumber 提取为空，走 OCR ,主动放弃
-        if not text.strip():
+        if not text.strip() or len(text.strip())<=1000:
             text = await ocr_text(path)
     except Exception:
         # pdfplumber 打开失败，走 OCR,主动放弃

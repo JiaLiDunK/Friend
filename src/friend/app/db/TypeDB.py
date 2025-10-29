@@ -11,7 +11,13 @@ from src.friend.entity.vo.TableData import TableData
 class TypeDB:
     def __init__(self,session: AsyncSession):
         self.session = session
+    async def __aenter__(self):
+        self.session = async_session()
+        await self.session.__aenter__()
+        return TypeDB(self.session)
 
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_type(self,type_data: SysType):
         """插入数据"""
         data = await self.get_type_name(type_data.type_name)
@@ -57,3 +63,6 @@ class TypeDB:
 async def get_type_db():
     async with async_session() as session:
         yield TypeDB(session)
+async def get_type_db_by_load():
+    async with async_session() as session:
+        return TypeDB(session)
