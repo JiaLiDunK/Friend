@@ -1,4 +1,5 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.LlmCallLogs import LlmCallLogs
 

@@ -2,6 +2,7 @@ from typing import List
 
 from sqlalchemy import update, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.Memory import Memory
 

@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 from loguru import logger
+
 from src.friend.app.db.BookVectorsDB import create_book_vectors_db, BookVectorsDB
 from src.friend.app.db.BooksDB import BooksDB, create_books_db
 from src.friend.app.db.ChunkDB import ChunkDB, create_chunk_db

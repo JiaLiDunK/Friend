@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from langchain.tools import StructuredTool
 from loguru import logger
+
 from src.friend.app.db.BooksDB import create_books_db
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.entity.po.BookVectors import BookVectors

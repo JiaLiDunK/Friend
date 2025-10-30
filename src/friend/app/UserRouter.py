@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi.params import Depends
 from fastapi.routing import APIRouter
 from loguru import logger
+
 from src.friend.app.db.UserDB import UserDB, create_user_db
 from src.friend.entity.R import R
 from src.friend.entity.po.SysUser import SysUser

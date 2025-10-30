@@ -5,8 +5,8 @@ from typing import List
 
 from loguru import logger
 
-from src.friend.app.db.BooksDB import create_books_db,create_books_db_by_load
-from src.friend.app.db.ChunkDB import create_chunk_db,create_chunk_db_by_load
+from src.friend.app.db.BooksDB import create_books_db_by_load
+from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document, clean_text, remove_substring, \

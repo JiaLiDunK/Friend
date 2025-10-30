@@ -1,10 +1,10 @@
 import asyncio
 import json
-from typing import List
 
 from langchain_community.chat_models import ChatTongyi
 from langchain_ollama import OllamaLLM
 from loguru import logger
+
 from src.friend.agents.node.MilvusNode import create_milvus_node, MilvusNode
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.app.core.LLMManager import get_llm_manager, LLMManager
@@ -13,7 +13,6 @@ from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
 from src.friend.app.db.PromptDB import create_prompt_db, PromptDB
 from src.friend.config.SettingConfig import settings
 from src.friend.entity.ai.AIResponseMessage import QuestionId
-from src.friend.entity.ai.MilvusResponse import SelectContent
 
 
 class SearchNode:

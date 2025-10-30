@@ -6,6 +6,7 @@ import re
 import string
 from io import BytesIO
 from typing import List, Any
+
 import ebooklib
 import fitz
 import pdfplumber
@@ -14,11 +15,14 @@ from bs4 import BeautifulSoup
 from ebooklib import epub
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.chat_models import ChatTongyi
 from langchain_community.document_loaders import TextLoader, UnstructuredWordDocumentLoader
 from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
 from loguru import logger
 from pdfplumber.utils.exceptions import PdfminerException
+
+from src.friend.config.SettingConfig import settings
 
 
 async def generate_random_string(length=8):
@@ -140,8 +144,41 @@ async def image_to_base64(image):
     image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return img_str
+async def ocr_with_qwen_vl_langchain(image, prompt="请识别图片中的文字内容，只返回图片中文字的内容，去掉多余的空格或换行符，如果没有文字则返回空字符串"):
+    """
+    使用LangChain调用通义 Qwen-VL-OCR 模型进行OCR识别
+    Args:
+        image (PIL.Image): 要识别的图片
+        prompt (str): 提示词
+    Returns:
+        str: 识别的文字内容
+    """
+    # 将图片转换为 base64
+    img_base64 = await image_to_base64(image)
 
-async def ocr_with_qwen_vl_langchain(image, prompt="请识别图片中的文字内容,只返回图片中文字的内容,去掉多余的空格或者换行符,如果没有可返回的文字内容，直接返回一个空字符串"""):
+    # 初始化通义多模态模型
+    llm = ChatTongyi(
+        model="qwen-vl-ocr",
+        api_key=settings.API_KEY_ALI,
+        model_kwargs={"temperature": 0.3}
+    )
+
+    # 构造消息（多模态内容）
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": f"data:image/png;base64,{img_base64}"}
+        ]
+    )
+
+    try:
+        # 调用模型（异步）
+        response = await llm.ainvoke([message])
+        return response.content
+    except Exception as e:
+        print(f"请求异常: {e}")
+        return ""
+async def ocr_with_qwen_vl_langchain_ollama(image, prompt="请识别图片中的文字内容,只返回图片中文字的内容,去掉多余的空格或者换行符,如果没有可返回的文字内容，直接返回一个空字符串"""):
     """
     使用LangChain调用本地Qwen2.5-VL模型进行OCR识别
 

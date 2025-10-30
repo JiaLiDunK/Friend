@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy import func, delete
 from sqlmodel import select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books

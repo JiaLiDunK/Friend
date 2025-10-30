@@ -1,6 +1,7 @@
 
 
 from langchain_community.chat_models import ChatTongyi
+
 from src.friend.app.db.MemoryDB import create_memory_db, MemoryDB
 from src.friend.config.SettingConfig import settings
 
