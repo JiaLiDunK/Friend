@@ -158,23 +158,35 @@ async def ocr_with_qwen_vl_langchain(image, prompt="请识别图片中的文字�
 
     # 初始化通义多模态模型
     llm = ChatTongyi(
-        model="qwen-vl-ocr",
-        api_key=settings.API_KEY_ALI,
-        model_kwargs={"temperature": 0.3}
+        model=settings.OCR_MODEL,
+        api_key=settings.API_KEY_TONGYI,
+        model_kwargs={"temperature": 0.1}
     )
 
     # 构造消息（多模态内容）
     message = HumanMessage(
         content=[
             {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": f"data:image/png;base64,{img_base64}"}
+            {
+                "type": "image",  # 修正：使用正确的类型
+                "image": f"data:image/png;base64,{img_base64}"  # 修正：直接使用 image 字段
+            }
         ]
     )
 
     try:
         # 调用模型（异步）
         response = await llm.ainvoke([message])
-        return response.content
+        # 处理返回内容
+        content = response.content
+        if isinstance(content, list):
+            # 如果是列表格式，提取text字段
+            texts = [item.get('text', '') for item in content if isinstance(item, dict)]
+            result = ''.join(texts)
+        else:
+            # 如果是字符串格式，直接使用
+            result = str(content) if content is not None else ""
+        return result
     except Exception as e:
         print(f"请求异常: {e}")
         return ""
