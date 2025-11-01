@@ -1,7 +1,6 @@
 from typing import List
 
-from sqlalchemy import func, update
-from sqlmodel import select
+from sqlmodel import select, func, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session

@@ -9,15 +9,17 @@ from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.agents.tools.DataBaseTools import DataBaseTools
 from src.friend.app.core.AgentTokenHandler import TongyiTokenHandler, _current_handler
 from src.friend.app.core.LLMManager import LLMManager, get_llm_manager
-from src.friend.app.db.BookVectorsDB import create_book_vectors_db
-from src.friend.app.db.ChunkDB import create_chunk_db
-from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
-from src.friend.app.db.PromptDB import create_prompt_db
+from src.friend.app.db import BookKnowledgeIdDB
+from src.friend.app.db.BookKnowledgeIdDB import create_book_vectors_knowledge_id_db_by_load
+from src.friend.app.db.BookVectorsDB import create_book_vectors_db_by_load
+from src.friend.app.db.ChunkDB import create_chunk_db_by_load
+from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db_by_load
+from src.friend.app.db.PromptDB import create_prompt_db_by_load
 from src.friend.config.SettingConfig import settings
 
 
 class DataBaseNode:
-    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node):
+    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,book_knowledge_id:BookKnowledgeIdDB):
         self.llm = ChatTongyi(
             model=settings.MODEL,
             api_key=settings.API_KEY_ALI,
@@ -42,6 +44,7 @@ class DataBaseNode:
         self.chunk_db = chunk_db
         self.rag_node = rag_node
         self.llm_manager = llm_manager
+        self.book_knowledge_id = book_knowledge_id
         # 创建工具
         db_tools = DataBaseTools(knowledge_base_db,book_vectors_db)
         self.tools = db_tools.get_tools()
@@ -64,19 +67,19 @@ class DataBaseNode:
         # 创建agent和executor
         self.save_database_agent  = create_openai_tools_agent(self.agent_llm,self.tools,self.prompt)
         self.save_database_executor = AgentExecutor(agent=self.save_database_agent, tools=self.tools, verbose=True)
-
     @classmethod
     async def create(cls):
-        knowledge_base_db = await create_knowledge_base_db()
-        book_vectors_db = await create_book_vectors_db()
-        prompt_db = await create_prompt_db()
+        knowledge_base_db = await create_knowledge_base_db_by_load()
+        book_vectors_db = await create_book_vectors_db_by_load()
+        prompt_db = await create_prompt_db_by_load()
         milvus_node = await create_milvus_node()
-        chunk_db = await  create_chunk_db()
+        chunk_db = await  create_chunk_db_by_load()
         rag_node = await get_rag_node()
         llm_manager = await get_llm_manager()
+        book_knowledge_id = await create_book_vectors_knowledge_id_db_by_load()
         # 从数据库中读取system提示词
         system_prompt = await prompt_db.get_prompt_by_id(4)
-        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node)
+        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,book_knowledge_id)
     async def should_create_knowledge_base(self,data:DataBaseState):
         """判断是否需要创建知识库,如果需要知识库,则返回对应的书籍"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
@@ -147,9 +150,34 @@ class DataBaseNode:
             # 4.将数据插入进数据库中
             await self.milvus_node.insert_into_data(data=data_to_insert,data_base_name=knowledge_base_data.data_base,collection_name=knowledge_base_data.collection)
             logger.info(f"插入完成{item}")
+    async def vector_all_books(self):
+        """向量化所有的书籍"""
+        # 1.获取所有知识库和相关集合的信息
+        knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
+        # 2.创建知识库和集合
+        for item in knowledge_base_list:
+            await self.milvus_node.create_database(item.data_base)
+            await self.milvus_node.create_collection(item.data_base, item.collection)
+        # 向量化所有的书籍
+        all_data = await self.book_knowledge_id.get_all_data()
+        for item in all_data:
+            data_list = await self.chunk_db.get_content_by_uuid(item[0].uuid)
+            # 向量化，插入进数据库
+            embeddings = await self.rag_node.text_to_embedding_documents_bge(data_list)
+            knowledge_base_data = await self.knowledge_base_db.get_data_by_id(item[0].knowledge_base_id)
+            data_to_insert = [
+                {"vector": vec, "content": text}
+                for vec, text in zip(embeddings, data_list)
+            ]
+            # 4.将数据插入进数据库中
+            await self.milvus_node.insert_into_data(data=data_to_insert, data_base_name=knowledge_base_data.data_base,
+                                                    collection_name=knowledge_base_data.collection)
+        logger.info(f"插入完成")
+        await self.book_knowledge_id.update_all_type_list(all_data)
 
 
-async def get_data_base_node()-> DataBaseNode:
-    if not hasattr(get_data_base_node,"instance"):
+
+async def get_data_base_node() -> DataBaseNode:
+    if not hasattr(get_data_base_node, "instance"):
         get_data_base_node.instance = await DataBaseNode.create()
     return get_data_base_node.instance

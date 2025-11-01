@@ -6,7 +6,7 @@ from datetime import datetime
 from loguru import logger
 
 from src.friend.app.core.AgentTokenHandler import TongyiTokenHandler, _current_handler
-from src.friend.app.db.LlmCallLogsDB import LlmCallLogsDB, create_llm_call_logs
+from src.friend.app.db.LlmCallLogsDB import LlmCallLogsDB, create_llm_call_logs_by_load
 from src.friend.entity.po.LlmCallLogs import LlmCallLogs
 
 
@@ -15,7 +15,7 @@ class LLMManager:
         self.llm_call_logs = llm_call_logs
     @classmethod
     async def create(cls):
-        llm_call_logs = await create_llm_call_logs()
+        llm_call_logs = await create_llm_call_logs_by_load()
         return cls(llm_call_logs)
     def tongyi_chat_token_time_logger(self,func):
         """这个是记录百炼进行chat的token和耗时"""

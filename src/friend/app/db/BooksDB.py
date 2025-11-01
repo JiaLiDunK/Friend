@@ -1,5 +1,4 @@
-from sqlalchemy import func, update
-from sqlmodel import select
+from sqlmodel import select, update, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session

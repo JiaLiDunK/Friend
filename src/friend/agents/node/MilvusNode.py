@@ -7,7 +7,8 @@ from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType
 from pymilvus.milvus_client import IndexParams
 
 from src.friend.agents.node.RagNode import RagNode, get_rag_node
-from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db, KnowledgeBaseDB
+from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db, KnowledgeBaseDB, \
+    create_knowledge_base_db_by_load
 from src.friend.config.SettingConfig import settings
 from src.friend.entity.ai.AIResponseMessage import QuestionId
 from src.friend.entity.ai.MilvusResponse import SearchContent, SelectContent
@@ -193,7 +194,7 @@ async def create_milvus_node(db_name: str = "default", collection_name: str = "d
     global _milvus_node_instance
     async with _milvus_lock:
         if _milvus_node_instance is None:
-            knowledge_base_db = await create_knowledge_base_db()
+            knowledge_base_db = await create_knowledge_base_db_by_load()
             rag_node = await get_rag_node()
             _milvus_node_instance = MilvusNode(knowledge_base_db=knowledge_base_db,rag_node=rag_node,db_name=db_name, collection_name=collection_name)
             logger.info(f"MilvusNode 实例已创建：DB={db_name}, Collection={collection_name}")

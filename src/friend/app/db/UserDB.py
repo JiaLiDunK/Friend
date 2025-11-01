@@ -33,7 +33,7 @@ class UserDB:
             SysUser.email==email
         )
         # 执行查询并获取结果
-        result = await self.session.execute(statement)
+        result = await self.session.exec(statement)
         user = result.first()
         return user[0] if user else None
 
