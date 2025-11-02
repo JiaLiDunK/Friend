@@ -25,8 +25,8 @@ class TypeDB:
         else:
             # 移除 id，防止手动传入重复主键
             type_data.id = None
-            async with self.session.begin():
-                self.session.add(type_data)
+            self.session.add(type_data)
+            await self.session.commit()
         return "类型添加成功"
 
 

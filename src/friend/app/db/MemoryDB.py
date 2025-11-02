@@ -1,5 +1,5 @@
 from typing import List
-
+from datetime import datetime
 from sqlmodel import update, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -17,10 +17,34 @@ class MemoryDB:
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.session.__aexit__(exc_type, exc, tb)
+    async def insert_data_ai(self,message:str,user_id:int):
+        """插入ai数据"""
+        data = Memory(
+            user_id=user_id,
+            type_id = 16,
+            content = message,
+            power = 18,
+            del_flag = 2,
+            create_time = datetime.now(),
+            update_time = datetime.now()
+        )
+        await self.insert_data(data)
+    async def insert_data_user(self,message:str,user_id:int):
+        """插入用户数据"""
+        data = Memory(
+            user_id=user_id,
+            type_id = 17,
+            content = message,
+            power = 18,
+            del_flag = 2,
+            create_time = datetime.now(),
+            update_time = datetime.now()
+        )
+        await self.insert_data(data)
     async def insert_data(self,data:Memory):
         """插入数据"""
-        async with self.session.begin():
-            self.session.add(data)
+        self.session.add(data)
+        await self.session.commit()
     async def get_short_term_ten_data(self,user_id:int)->List[Memory]:
         """获取改用户最近十次的聊天记录"""
         statement = select(Memory).where(Memory.user_id==user_id and Memory.is_deleted==21 and Memory.power==16).order_by(Memory.create_time.desc()).limit(10)
