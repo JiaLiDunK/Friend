@@ -9,11 +9,12 @@ from src.friend.entity.R import R
 chatRouter = APIRouter()
 
 
-@chatRouter.post("/chatTest")
-async def chat_test(data:SearchNode=Depends(get_search_node)):
+@chatRouter.post("/chatSearch")
+async def chat_search(message:str
+        ,data:SearchNode=Depends(get_search_node)):
     logger.info("知识库检索")
-    result = await data.expand_and_retrieve("")
-    return result
+    result = await data.expand_and_retrieve(message)
+    return R.ok().data_dict(result)
 @chatRouter.post("/girlfriend")
 async def girlfriend(message:str
         ,girl_node:GirlfriendNode=Depends(get_girl_friend_node)):

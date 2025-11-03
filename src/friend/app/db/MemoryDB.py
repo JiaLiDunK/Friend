@@ -49,12 +49,17 @@ class MemoryDB:
         """获取改用户最近十次的聊天记录"""
         statement = select(Memory).where(Memory.user_id==user_id and Memory.is_deleted==21 and Memory.power==16).order_by(Memory.create_time.desc()).limit(10)
         result = await self.session.exec(statement)
-        return result.all()
+        data: List[Memory] = result.all()
+        data.sort(key=lambda x: x.id)
+        return data
     async def get_mid_term_three_data(self,user_id:int)->List[Memory]:
         """获取改用户最近三次的聊天记录"""
         statement = select(Memory).where(Memory.user_id==user_id and Memory.is_deleted==21 and Memory.power==17).order_by(Memory.create_time.desc()).limit(3)
         result = await self.session.exec(statement)
-        return result.all()
+        data:List[Memory] = result.all()
+        data.sort(key=lambda x: x.id)
+
+        return data
     async def get_long_term_one_data(self,user_id:int)->Memory:
         """获取改用户最近一次的聊天记录"""
         statement = select(Memory).where(Memory.user_id==user_id and Memory.is_deleted==21 and Memory.power==18).order_by(Memory.create_time.desc()).limit(1)

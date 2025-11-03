@@ -1,5 +1,7 @@
+from typing import List
+
 from langchain_community.chat_models import ChatTongyi
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 
 from src.friend.app.core.LLMManager import get_llm_manager, LLMManager
 from src.friend.app.db.GirlfriendPromptDB import create_girlfriend_prompt_db, GirlfriendPromptDB, \
@@ -30,10 +32,18 @@ class GirlfriendNode:
         await self.memory_db.insert_data_user(message,1)
         data = await self.girlfriend_prompt_db.get_data_by_user_id(1)
         system = data.prompt
-        prompt = [
+        prompt:List[BaseMessage] = [
             SystemMessage(system),
-            HumanMessage(message)
         ]
+        ten_data = await self.memory_db.get_short_term_ten_data(1)
+        for item in ten_data:
+            # 添加短期的记忆,最近十次的聊天记录
+            if item.type_id == 17: # 表示是人类方的
+                prompt.append(HumanMessage(item.content))
+            elif item.type_id == 16: # 表示是ai方的
+                prompt.append(AIMessage(item.content))
+        # 最后再添加此次的聊天记录
+        prompt.append(HumanMessage(message))
         result = await self.llm.ainvoke(prompt)
         await self.memory_db.insert_data_ai(result.content,1)
         return result.content
