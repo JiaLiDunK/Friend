@@ -5,6 +5,7 @@ from fastapi.params import Depends
 from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
+from friend.app.QuestionRouter import questionRouter
 from src.friend.app.AgentRouter import agentRouter
 from src.friend.app.BooksRouter import booksRouter
 from src.friend.app.ChatRouter import chatRouter
@@ -54,6 +55,7 @@ app.include_router(knowledgeBaseRouter,prefix="/knowledgeBase",tags=["知识库"
 app.include_router(booksRouter,prefix="/books",tags=["书籍处理"])
 app.include_router(chatRouter,prefix="/chat",tags=["聊天"])
 app.include_router(agentRouter,prefix="/agent",tags=["任务"])
+app.include_router(questionRouter,prefix="/question",tags=["问题"])
 # 未授权时重定向用户
 # @app.middleware("http")
 # async def redirect_unauthorized(request: Request, call_next):
