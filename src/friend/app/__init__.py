@@ -5,7 +5,7 @@ from fastapi.params import Depends
 from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
-from friend.app.QuestionRouter import questionRouter
+from src.friend.app.QuestionRouter import questionRouter
 from src.friend.app.AgentRouter import agentRouter
 from src.friend.app.BooksRouter import booksRouter
 from src.friend.app.ChatRouter import chatRouter

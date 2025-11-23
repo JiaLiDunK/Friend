@@ -50,11 +50,7 @@ class BookKnowledgeIdDB:
         result = await self.session.exec(statement)
         total = await self.session.exec(count_statement)
         item = result.all()
-        try:
-            count = total.scalar_one()
-        except Exception:
-            count_row = total.one()
-            count = count_row[0]
+        count = total.one()
         items = [
             KnowledgeToBook(
                 id=bk.id,
