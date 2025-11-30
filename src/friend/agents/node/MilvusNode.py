@@ -120,6 +120,30 @@ class MilvusNode:
             )
         result_list.sort()
         return result_list
+
+    async def search_know_base(self,search_data:QuestionId,top_k: int = 5,
+        nprobe: int = 10)->List[SelectContent]:
+        """生成的问题去指定的知识库中查询"""
+        embedding = await self.rag_node.text_to_embedding_query_bge(search_data.question)
+        search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
+        # 切换知识库
+        self.client.using_database(search_data.data_base)
+        self.client.load_collection(search_data.collection)
+        # 检索
+        data_list = await self._run_async(
+            self.client.search,
+            collection_name=search_data.collection,
+            data=[embedding],
+            anns_field="vector",
+            search_params=search_params,
+            limit=top_k,
+            output_fields=["content"],
+        )
+        milvus_list = [SearchContent(**item) for item in data_list[0]]
+        # 过滤掉相似度低的数据
+        milvus_list = [item for item in milvus_list if item.distance >= 0.65]
+        if len(milvus_list) == 0:
+            return []
         # 下述是根据id获取前后文的内容,暂时不需要
         id_list = [item.id for item in milvus_list]
         context_ids = list(set([i for id_ in id_list for i in (id_ - 1, id_, id_ + 1) if i >= 0]))

@@ -7,3 +7,7 @@ class QueryTable(BaseModel):
     page_num: int
     keywords: str
 
+class SearchData(BaseModel):
+    """检索"""
+    question: str
+    knowledge_base_id: int

@@ -4,7 +4,7 @@ from typing import List
 
 from langchain_community.chat_models import ChatTongyi
 from langchain_ollama import OllamaLLM
-
+from loguru import logger
 from src.friend.agents.node.MilvusNode import create_milvus_node, MilvusNode
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.app.core.LLMManager import get_llm_manager, LLMManager
@@ -13,6 +13,7 @@ from src.friend.app.db.PromptDB import PromptDB, create_prompt_db_by_load
 from src.friend.config.SettingConfig import settings
 from src.friend.entity.ai.AIResponseMessage import QuestionId
 from src.friend.entity.ai.MilvusResponse import SelectContent
+from src.friend.entity.vo.QueryTable import SearchData
 
 
 class SearchNode:
@@ -72,6 +73,22 @@ class SearchNode:
         # 4. 限制返回最多5条内容
         back_list = back_list[:3]
         return back_list
+    async def search_know_base(self,data:SearchData):
+        know_base = await self.knowledge_base_db.get_data_by_id(data.knowledge_base_id)
+        search_data:QuestionId = QuestionId(
+            question=data.question,
+            id=know_base.id,
+            data_base=know_base.data_base,
+            collection=know_base.collection
+        )
+        result_list:List[SelectContent] = await self.milvus_node.search_know_base(search_data=search_data)
+        logger.info(f"查询到了{len(result_list)}")
+        message = ""
+        i = 1
+        for item in result_list:
+            message +=f"{i}.{item.content}\n==============\n"
+            i += 1
+        return message
 
         # for item in back_list:
         #     logger.info(f"本次查询到了:{len(item.content)}:{item.content}")
