@@ -14,6 +14,7 @@ from src.friend.app.MessagePromptRouter import messagePromptRouter
 from src.friend.app.ReadAndOutRouter import readAndOutRouter
 from src.friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
+from src.friend.app.MemoryRouter import memoryRouter
 from src.friend.config.SecurityConfig import get_current_user
 
 
@@ -56,6 +57,7 @@ app.include_router(booksRouter,prefix="/books",tags=["书籍处理"])
 app.include_router(chatRouter,prefix="/chat",tags=["聊天"])
 app.include_router(agentRouter,prefix="/agent",tags=["任务"])
 app.include_router(questionRouter,prefix="/question",tags=["问题"])
+app.include_router(memoryRouter,prefix="/memory",tags=["记忆"])
 # 未授权时重定向用户
 # @app.middleware("http")
 # async def redirect_unauthorized(request: Request, call_next):

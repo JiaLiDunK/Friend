@@ -76,7 +76,12 @@ class KnowledgeBaseDB:
         result = await self.session.exec(statement)
         item = result.all()
         return item
-
+    async def get_by_girlfriend_id(self)->List[KnowledgeBase]:
+        """根据girlfriend_id获取配置信息"""
+        statement = select(KnowledgeBase).where(KnowledgeBase.id==77)
+        result = await self.session.exec(statement)
+        item = result.all()
+        return item
 
 # 工厂函数(内部业务调用这个)
 async def create_knowledge_base_db():

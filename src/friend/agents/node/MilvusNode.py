@@ -109,7 +109,18 @@ class MilvusNode:
         milvus_list = [item for item in milvus_list if item.distance >= 0.65]
         if len(milvus_list) == 0:
             return []
-        # 下述是根据id获取前后文的内容
+        result_list: List[SelectContent] = []
+        for item in milvus_list:
+            current_id = item.id
+            context_text = item.entity.content
+            result_list.append(
+                SelectContent(id=current_id,
+                content=context_text.strip(),
+                distance=item.distance)
+            )
+        result_list.sort()
+        return result_list
+        # 下述是根据id获取前后文的内容,暂时不需要
         id_list = [item.id for item in milvus_list]
         context_ids = list(set([i for id_ in id_list for i in (id_ - 1, id_, id_ + 1) if i >= 0]))
         id_expr = f"id in {context_ids}"  # 生成 Milvus 查询条件

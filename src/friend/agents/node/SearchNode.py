@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import List
 
 from langchain_community.chat_models import ChatTongyi
 from langchain_ollama import OllamaLLM
@@ -8,11 +9,12 @@ from loguru import logger
 from src.friend.agents.node.MilvusNode import create_milvus_node, MilvusNode
 from src.friend.agents.state.DataBaseState import DataBaseState
 from src.friend.app.core.LLMManager import get_llm_manager, LLMManager
-from src.friend.app.db.KnowledgeBaseDB import KnowledgeBaseDB
+from src.friend.app.db.KnowledgeBaseDB import KnowledgeBaseDB, create_knowledge_base_db_by_load
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db
-from src.friend.app.db.PromptDB import create_prompt_db, PromptDB
+from src.friend.app.db.PromptDB import create_prompt_db, PromptDB, create_prompt_db_by_load
 from src.friend.config.SettingConfig import settings
 from src.friend.entity.ai.AIResponseMessage import QuestionId
+from src.friend.entity.ai.MilvusResponse import SelectContent
 
 
 class SearchNode:
@@ -39,8 +41,8 @@ class SearchNode:
     @classmethod
     async def create(cls):
         milvus_node = await create_milvus_node()
-        knowledge_base_db = await create_knowledge_base_db()
-        prompt_db = await create_prompt_db()
+        knowledge_base_db = await create_knowledge_base_db_by_load()
+        prompt_db = await create_prompt_db_by_load()
         llm_manager = await get_llm_manager()
         return cls(milvus_node,knowledge_base_db,prompt_db,llm_manager)
     async def send_message_llm(self,question:str):
@@ -56,7 +58,7 @@ class SearchNode:
         data:DataBaseState = DataBaseState(message=responses)
         return data
 
-    async def expand_and_retrieve(self, question: str):
+    async def expand_and_retrieve(self, question: str)->List[SelectContent]:
         """这个方法是扩充问题然后查询知识库"""
         # 1.获取系统提示词以及知识库相关的信息
         responses = await self.send_message_llm(question)
@@ -71,14 +73,17 @@ class SearchNode:
         back_list.sort()  # 假设Sort是按某种标准排序
         # 4. 限制返回最多5条内容
         back_list = back_list[:3]
-        logger.info(f"本次查询到了:{len(back_list)}")
+        return back_list
+
+        # for item in back_list:
+        #     logger.info(f"本次查询到了:{len(item.content)}:{item.content}")
         # 5. 生成系统消息
-        system_messages = f"你是一个大师。帮人回答他们的问题，解决他们的难点\n用户的问题:{question}\n参考资料:\n"
-        system_messages += "\n".join(f"{idx + 1}. {item.content}" for idx, item in enumerate(back_list))
-        # 6. 获取AI响应
-        logger.info(f"查询:{system_messages}")
-        ai_message = await self.ollama.ainvoke(system_messages)
-        return ai_message
+        # system_messages = f"你是一个大师。帮人回答他们的问题，解决他们的难点\n用户的问题:{question}\n参考资料:\n"
+        # system_messages += "\n".join(f"{idx + 1}. {item.content}" for idx, item in enumerate(back_list))
+        # # 6. 获取AI响应
+        # logger.info(f"查询:{system_messages}")
+        # # ai_message = await self.ollama.ainvoke(system_messages)
+        # return ai_message
 
 
 async def get_search_node()-> SearchNode:
