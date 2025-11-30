@@ -5,16 +5,16 @@ from fastapi.params import Depends
 from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
-from src.friend.app.QuestionRouter import questionRouter
 from src.friend.app.AgentRouter import agentRouter
 from src.friend.app.BooksRouter import booksRouter
 from src.friend.app.ChatRouter import chatRouter
 from src.friend.app.KnowledgeBaseRouter import knowledgeBaseRouter
+from src.friend.app.MemoryRouter import memoryRouter
 from src.friend.app.MessagePromptRouter import messagePromptRouter
+from src.friend.app.QuestionRouter import questionRouter
 from src.friend.app.ReadAndOutRouter import readAndOutRouter
 from src.friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
-from src.friend.app.MemoryRouter import memoryRouter
 from src.friend.config.SecurityConfig import get_current_user
 
 

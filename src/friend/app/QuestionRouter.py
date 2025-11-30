@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends
+from loguru import logger
 
 from src.friend.app.db.AnswerDB import AnswerDB, create_answer_db
 from src.friend.app.db.QuestionDB import QuestionDB, create_question_db
@@ -10,7 +11,7 @@ from src.friend.entity.R import R
 from src.friend.entity.po.Answer import Answer
 from src.friend.entity.po.Question import Question
 from src.friend.entity.vo.AddForm import AddFormQuestion
-from loguru import logger
+
 questionRouter = APIRouter()
 
 

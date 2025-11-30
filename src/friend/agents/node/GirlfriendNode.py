@@ -1,12 +1,11 @@
 from typing import List
 
 from langchain_community.chat_models import ChatTongyi
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
 
-
-from src.friend.agents.node.CognitiveEngine import get_cognitive_engine_node,CognitiveEngine
+from src.friend.agents.node.CognitiveEngine import get_cognitive_engine_node, CognitiveEngine
 from src.friend.app.core.LLMManager import get_llm_manager, LLMManager
-from src.friend.app.db.GirlfriendPromptDB import create_girlfriend_prompt_db, GirlfriendPromptDB, \
+from src.friend.app.db.GirlfriendPromptDB import GirlfriendPromptDB, \
     create_girlfriend_prompt_db_by_load
 from src.friend.app.db.MemoryDB import create_memory_db_by_load, MemoryDB
 from src.friend.config.SettingConfig import settings

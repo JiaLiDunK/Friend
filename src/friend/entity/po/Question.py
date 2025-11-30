@@ -3,6 +3,7 @@ from datetime import datetime
 import sqlalchemy.dialects.postgresql as postgresql
 from sqlmodel import SQLModel, Field, Column
 
+
 class Question(SQLModel,table=True):
     __tablename__ = "question"
     id: int = Field(

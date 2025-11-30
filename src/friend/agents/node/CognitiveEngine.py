@@ -1,15 +1,14 @@
 # 认知引擎，处理理解、推理、总结等
 from typing import List
-from loguru import logger
+
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
+from loguru import logger
 
 from src.friend.agents.node.SearchNode import get_search_node, SearchNode
-from src.friend.app.AgentRouter import knowledge_base
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db_by_load, KnowledgeBaseDB
-from src.friend.app.db.PromptDB import create_prompt_db_by_load,PromptDB
+from src.friend.app.db.PromptDB import create_prompt_db_by_load, PromptDB
 from src.friend.config.SettingConfig import settings
-from src.friend.entity.po.MessagePrompt import MessagePrompt
 
 
 class CognitiveEngine:

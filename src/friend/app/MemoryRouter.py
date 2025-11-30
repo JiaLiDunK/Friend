@@ -1,7 +1,8 @@
 from typing import List
 
 from fastapi import APIRouter, Depends
-from loguru import  logger
+from loguru import logger
+
 from src.friend.app.db.MemoryDB import MemoryDB, create_memory_db_by_load
 from src.friend.entity.R import R
 from src.friend.entity.vo.QueryTable import QueryTable
