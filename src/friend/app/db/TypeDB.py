@@ -45,7 +45,7 @@ class TypeDB:
         if data.keywords:
             statement = statement.where(SysType.type_name.like(f"%{data.keywords}%"))
             count_statement = count_statement.where(SysType.type_name.like(f"%{data.keywords}%"))
-        statement = statement.limit(data.pagesize).offset(data.page_num)
+        statement = statement.order_by(SysType.id).limit(data.pagesize).offset(data.page_num)
         result = await self.session.exec(statement)
         total = await self.session.exec(count_statement)
         item = result.all()
