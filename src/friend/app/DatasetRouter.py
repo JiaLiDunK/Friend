@@ -1,4 +1,29 @@
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
+from src.friend.entity.R import R
+from src.friend.entity.po.dataset import Dataset
+from src.friend.app.db.DatasetDB import DatasetDB, create_dataset_db
+from src.friend.entity.vo.QueryTable import QueryTable
+from loguru import logger
 datasetRouter = APIRouter()
+
+@datasetRouter.post("/getList")
+async def get_list(data:QueryTable,dataset_db:DatasetDB=Depends(create_dataset_db)):
+    logger.info(f"查询数据:{data}")
+    result = await dataset_db.get_data_list(data)
+    return R.ok().data_dict(result)
+@datasetRouter.post("/add")
+async def add(data:Dataset,dataset_db:DatasetDB=Depends(create_dataset_db)):
+    logger.info(f"添加数据:{data}")
+    result = await dataset_db.insert_data(data)
+    return R.ok().messages(result)
+@datasetRouter.post("/delData")
+async def del_data(data:Dataset,dataset_db:DatasetDB=Depends(create_dataset_db)):
+    logger.info(f"删除数据:{data}")
+    result = await dataset_db.del_data(data)
+    return R.ok().messages(result)
+@datasetRouter.post("/update")
+async def update(data:Dataset,dataset_db:DatasetDB=Depends(create_dataset_db)):
+    logger.info(f"更新数据:{data}")
+    result = await dataset_db.update_data(data)
+    return R.ok().messages(result)
 

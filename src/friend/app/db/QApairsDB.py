@@ -1,3 +1,4 @@
+from src.friend.entity.po.QApairs import QApairs
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
@@ -13,6 +14,16 @@ class QApairsDB:
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.session.__aexit__(exc_type, exc, tb)
+    async def insert_data(self,data:QApairs):
+        """添加单个数据"""
+        self.session.add(data)
+        await self.session.commit()
+    async def del_data(self,data:QApairs):
+        """删除单个数据"""
+        await self.session.delete(data)
+        await self.session.commit()
+
+
 
 # 工厂函数
 async def create_qa_pairs_db():
