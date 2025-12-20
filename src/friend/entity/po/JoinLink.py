@@ -14,3 +14,4 @@ class JoinLink(SQLModel,table=True):
     master_id:int
     slave_id:int
     order_id:int
+    sun_num:int

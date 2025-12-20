@@ -18,6 +18,7 @@ from src.friend.app.TypeRouter import typeRouter
 from src.friend.app.UserRouter import userRouter
 from src.friend.app.DatasetRouter import datasetRouter
 from src.friend.app.QApairsRouter import qa_pairsRouter
+from src.friend.app.JoinLinkRouter import joinLinkRouter
 from src.friend.config.SecurityConfig import get_current_user
 
 @asynccontextmanager
@@ -63,6 +64,7 @@ app.include_router(memoryRouter,prefix="/memory",tags=["记忆"])
 app.include_router(searchRouter,prefix="/search",tags=["检索"])
 app.include_router(datasetRouter,prefix="/dataset",tags=["数据集"])
 app.include_router(qa_pairsRouter,prefix="/qa_pairs",tags=["回答问题"])
+app.include_router(joinLinkRouter,prefix="/joinLink",tags=["关联的"])
 # 未授权时重定向用户
 # @app.middleware("http")
 # async def redirect_unauthorized(request: Request, call_next):

@@ -1,6 +1,7 @@
 import asyncio
 import os
 import uuid
+from datetime import datetime
 from typing import List
 
 from loguru import logger
@@ -9,6 +10,7 @@ from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.vo.AddForm import AddBooks
 from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document, clean_text, remove_substring, \
     chunk_docs, chunk_array, compress_newlines
 
@@ -64,15 +66,15 @@ class ReadNode:
                 i += 1
             await self.chunk_db.update_data_list(chunk_list)
 
-    async def read_path(self,path:str):
+    async def read_path(self,data:AddBooks):
         """多线程启动的---分割指定目录下的文本文件"""
-        arr = await split_all_files_in_dir(path)
-        tasks = [asyncio.create_task(self.read_and_save(paths)) for paths in arr]
+        arr = await split_all_files_in_dir(data.path)
+        tasks = [asyncio.create_task(self.read_and_save(paths,data)) for paths in arr]
         # 等待任务完成
         await asyncio.gather(*tasks)
         logger.info("读取完成")
 
-    async def read_and_save(self,paths: List[str]):
+    async def read_and_save(self,paths: List[str],data:AddBooks):
         """分割保存指定目录下的文本文件"""
         # 防止并发复用
         books_db = await create_books_db_by_load()
@@ -102,7 +104,7 @@ class ReadNode:
                     type_id = 5  # 你需要的 type_id 值
                 elif len(docs) < 2:
                     type_id = 6
-                book = Books(tittle=filename, uuid=sole_id, type_id=type_id)
+                book = Books(tittle=filename,format=filename.split('.')[-1],uuid=sole_id, type_id=type_id,use=data.use,remark=data.remark,insert_time= datetime.now())
                 await books_db.insert_data(book)
                 logger.info(f"插入 Book: {filename}")
                 chunk_list: List[Chunk] = []

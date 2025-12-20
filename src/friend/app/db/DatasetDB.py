@@ -1,11 +1,14 @@
+from typing import List
+
 from src.friend.entity.vo.TableData import TableData
-from sqlalchemy import func, update
+from sqlalchemy import func, update, delete
 from sqlmodel import select
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.po.dataset import Dataset
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
+from src.friend.entity.vo.TypeOptions import TypeOptions
 
 
 class DatasetDB:
@@ -25,7 +28,8 @@ class DatasetDB:
         return "添加成功"
     async def del_data(self,data:Dataset)->str:
         """删除单个数据"""
-        await self.session.delete(data)
+        statement = delete(Dataset).where(Dataset.id==data.id)
+        await self.session.exec(statement)
         await self.session.commit()
         return "删除成功"
     async def get_data_list(self,data:QueryTable):
@@ -41,14 +45,26 @@ class DatasetDB:
         total = await self.session.exec(count_statement)
         item = result.all()
         count = total.one()
-        dataset_list = [Dataset.model_validate(dataset) for dataset in item]
-        return TableData[Dataset](total=count,items=dataset_list).model_dump()
+        return TableData[Dataset](total=count,items=item).model_dump()
     async def update_data(self,data:Dataset)->str:
         """更新单个数据"""
         statement = update(Dataset).where(Dataset.id==data.id).values(description=data.description)
         await self.session.exec(statement)
         await self.session.commit()
         return "更新成功"
+    async def get_options(self):
+        """获取选项"""
+        statement = select(Dataset)
+        result = await self.session.exec(statement)
+        item = result.all()
+        option_list: List[TypeOptions] = [
+            TypeOptions(
+                value=record.id,
+                label=record.description
+            )
+            for record in item
+        ]
+        return option_list
 # 工厂函数
 async def create_dataset_db():
     async with async_session() as session:

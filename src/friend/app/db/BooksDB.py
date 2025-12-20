@@ -36,8 +36,7 @@ class BooksDB:
         total = await self.session.exec(count_statement)
         item = result.all()
         count = total.one()
-        book_list = [Books.model_validate(book) for book in item]
-        return TableData[Books](total=count,items=book_list).model_dump()
+        return TableData[Books](total=count,items=item).model_dump()
     async def  update_data(self,data:Books):
         """更新书籍的信息"""
         async with self.session.begin():

@@ -28,7 +28,6 @@ class KnowledgeToBook(BaseModel):
     data_base_remark: str
     collection_remark: str
     knowledge_base_id: int
-
     @classmethod
     def from_orm_join(cls, bv: BookKnowledgeId, tittle: str,data_base_remark: str,
     collection_remark: str):
@@ -41,3 +40,12 @@ class KnowledgeToBook(BaseModel):
             data_base_remark=data_base_remark,
             collection_remark=collection_remark
         )
+
+class DatasetToBook(BaseModel):
+    id:int
+    master_id:int
+    master_name:str
+    slave_name:str
+    slave_id:int
+    order_id:int
+    sun_num:int

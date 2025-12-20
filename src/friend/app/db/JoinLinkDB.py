@@ -1,3 +1,5 @@
+from typing import List
+
 from src.friend.entity.vo.TableData import TableData
 from sqlalchemy import func
 from sqlmodel import select
@@ -37,7 +39,11 @@ class JoinLinkDB:
         count = total.one()
         join_link_list = [JoinLink.model_validate(join_link) for join_link in item]
         return TableData[JoinLink](total=count, items=join_link_list).model_dump()
-
+    async def insert_list(self,data:List[JoinLink])->str:
+        """添加多个数据"""
+        self.session.add_all(data)
+        await self.session.commit()
+        return "添加成功"
 
 # 工厂函数
 async def create_join_link_db():

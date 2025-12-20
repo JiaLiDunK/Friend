@@ -9,3 +9,9 @@ class AddFormQuestion(BaseModel):
     power_id: str
     question: str
     answers: List[str] = []
+
+class AddBooks(BaseModel):
+    path:str
+    encode:str
+    remark:str
+    use:str

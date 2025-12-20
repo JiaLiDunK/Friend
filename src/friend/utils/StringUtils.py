@@ -39,7 +39,7 @@ async def remove_whitespace_list(text: List[str]) -> List[str]:
     return await asyncio.gather(*(remove_whitespace(t) for t in text))
 
 
-async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, separators: list):
+async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, separators: list,encode="utf-8"):
     """根据文件后缀名加载并切割文档"""
     ext = os.path.splitext(path)[1].lower()  # 获取后缀名
     if ext == ".pdf":
@@ -50,7 +50,7 @@ async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, se
         loader = UnstructuredWordDocumentLoader(path)
         documents = loader.load()
     elif ext in [".txt", ".md"]:
-        loader = TextLoader(path, encoding="utf-8")
+        loader = TextLoader(path, encoding=encode)
         documents = loader.load()
     elif ext == ".epub":
         book = epub.read_epub(path)
