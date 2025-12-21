@@ -3,28 +3,13 @@ from typing import List
 from fastapi import APIRouter, Depends
 from loguru import logger
 
-from src.friend.agents.node.ReadNode import ReadNode
+from src.friend.agents.node.ReadNode import ReadNode, get_read_node
 from src.friend.entity.R import R
 from src.friend.entity.vo.AddForm import AddBooks
 
 readAndOutRouter = APIRouter()
 
 
-async def get_read_node() -> ReadNode:
-    """
-    FastAPI 依赖注入函数，用于获取单例的 ReadNode 实例。
-
-    - 第一次调用时，会通过 `ReadNode.create()` 初始化一个实例，并绑定到函数属性上。
-    - 后续调用时，直接复用之前创建的实例（保证全局只有一个 ReadNode）。
-    - 好处：避免在每个接口函数里都重复 `await ReadNode.create()`。
-    """
-    # 判断这个函数对象是否已经有一个 "instance" 属性
-    if not hasattr(get_read_node, "instance"):
-        # 如果没有，就创建一个新的 ReadNode 实例并缓存起来
-        get_read_node.instance = await ReadNode.create()
-
-    # 返回全局唯一的 ReadNode 实例
-    return get_read_node.instance
 
 
 @readAndOutRouter.post("/readBooks")

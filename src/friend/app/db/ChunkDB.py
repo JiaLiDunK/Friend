@@ -81,6 +81,11 @@ class ChunkDB:
         total = await self.session.exec(statement)
         count = total.one()
         return count
+    async def get_order_id_by_uuid(self,order_id:int ,uuid: str)->Chunk:
+        """根据uuid获取所有的内容"""
+        statement = select(Chunk).where(Chunk.uuid == uuid,Chunk.order_id == order_id)
+        result = await self.session.exec(statement)
+        return result.first()
 
 # 工厂函数（业务内部调用用这个）
 async def create_chunk_db():

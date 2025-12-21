@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
-from src.friend.entity.R import R
+from loguru import logger
+
 from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db
 from src.friend.entity.vo.QueryTable import QueryTable
-from loguru import logger
+
 qa_pairsRouter = APIRouter()
 
 @qa_pairsRouter.post("/getList")

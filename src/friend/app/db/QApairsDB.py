@@ -1,7 +1,9 @@
-from src.friend.entity.po.QApairs import QApairs
+from typing import List
+
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
+from src.friend.entity.po.QApairs import QApairs
 
 
 class QApairsDB:
@@ -22,7 +24,10 @@ class QApairsDB:
         """删除单个数据"""
         await self.session.delete(data)
         await self.session.commit()
-
+    async def insert_list(self,data_list:List[QApairs]):
+        """批量插入数据"""
+        self.session.add_all(data_list)
+        await self.session.commit()
 
 
 # 工厂函数

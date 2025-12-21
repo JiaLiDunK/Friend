@@ -42,6 +42,12 @@ class BooksDB:
         async with self.session.begin():
             statement = update(Books).where(Books.id==data.id).values(tittle=data.tittle,type_id=data.type_id)
             await self.session.exec(statement)
+    async def get_data_by_id(self,data_id:int):
+        """根据id获取书籍"""
+        async with self.session.begin():
+            statement = select(Books).where(Books.id==data_id)
+            result = await self.session.exec(statement)
+        return result.one()
 
 # 工厂函数（业务内部调用用这个）
 async def create_books_db():

@@ -1,14 +1,15 @@
 from typing import List
 
 from fastapi import APIRouter, Depends
-
-from src.friend.app.db.ChunkDB import ChunkDB, create_chunk_db
-from src.friend.entity.R import R
-from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
-from src.friend.entity.po.JoinLink import JoinLink
-from src.friend.entity.vo.QueryTable import QueryTable
 from loguru import logger
 
+from src.friend.agents.node.ReadNode import ReadNode, get_read_node
+from src.friend.app.db.BooksDB import BooksDB, create_books_db_by_load
+from src.friend.app.db.ChunkDB import ChunkDB, create_chunk_db
+from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
+from src.friend.entity.R import R
+from src.friend.entity.po.JoinLink import JoinLink
+from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TypeOptions import SelectOptions
 
 joinLinkRouter = APIRouter()
@@ -27,3 +28,14 @@ async def add_list(data:List[SelectOptions],join_link_db:JoinLinkDB=Depends(crea
         insert_data.append(JoinLink(master_id=item.master_id,slave_id=item.slave_id,order_id=0,sun_num=sum_num))
     result = await join_link_db.insert_list(insert_data)
     return R.ok().messages(result)
+
+@joinLinkRouter.post("/createLoraData")
+async def create_lora_data(data:JoinLink,books_db:BooksDB=Depends(create_books_db_by_load),read: ReadNode = Depends(get_read_node)):
+    logger.info(f"创建lora数据:{data}")
+    result = await books_db.get_data_by_id(data.slave_id)
+    if result is None:
+        logger.error(f"未找到 ID 为 {data.slave_id} 的书籍")
+        return R.error().messages("未找到对应的书籍信息")
+    await read.start_create_lora_data(data.slave_id,result.uuid,data.sun_num)
+    return R.ok().messages("创建lora数据成功")
+

@@ -1,15 +1,13 @@
 import uuid
 from datetime import datetime
-from typing import List
 
 from fastapi import APIRouter, Depends
-from src.friend.entity.R import R
-from src.friend.entity.po.dataset import Dataset
-from src.friend.app.db.DatasetDB import DatasetDB, create_dataset_db
-from src.friend.entity.vo.QueryTable import QueryTable
 from loguru import logger
 
-from src.friend.entity.vo.TypeOptions import SelectOptions
+from src.friend.app.db.DatasetDB import DatasetDB, create_dataset_db
+from src.friend.entity.R import R
+from src.friend.entity.po.dataset import Dataset
+from src.friend.entity.vo.QueryTable import QueryTable
 
 datasetRouter = APIRouter()
 

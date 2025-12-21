@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import sqlalchemy.dialects.postgresql as postgresql
 from sqlmodel import SQLModel, Field, Column
 

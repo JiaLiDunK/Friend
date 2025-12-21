@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel
 
 
@@ -10,3 +12,10 @@ class QuestionId(BaseModel):
     id:int
     data_base:str
     collection:str
+
+class QAPair(BaseModel):
+    question:str
+    answer:str
+
+class GeneratedData(BaseModel):
+    generated: List[QAPair]

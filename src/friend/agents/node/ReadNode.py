@@ -1,29 +1,44 @@
 import asyncio
+import json
 import os
 import uuid
 from datetime import datetime
 from typing import List
 
+from langchain_ollama import OllamaLLM
 from loguru import logger
 
 from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
+from src.friend.app.db.JoinLinkDB import create_join_link_load
+from src.friend.app.db.QApairsDB import create_qa_pairs_load
+from src.friend.entity.ai.AIResponseMessage import GeneratedData
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.po.QApairs import QApairs
 from src.friend.entity.vo.AddForm import AddBooks
 from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document, clean_text, remove_substring, \
     chunk_docs, chunk_array, compress_newlines
 
 
 class ReadNode:
-    def __init__(self,books_db,chunk_db):
+    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db):
         self.books_db = books_db
         self.chunk_db = chunk_db
+        self.join_link_db = join_link_db
+        self.qa_pairs_db = qa_pairs_db
+        self.ollamaLLm = OllamaLLM(
+        model="huihui_ai/qwen3-abliterated:8b",
+        reasoning=True,
+        temperature=0.2
+    )
     @classmethod
     async def create(cls):
         books_db = await create_books_db_by_load()
         chunk_db = await create_chunk_db_by_load()
-        return cls(books_db, chunk_db)
+        join_link_db = await create_join_link_load()
+        qa_pairs_db = await create_qa_pairs_load()
+        return cls(books_db, chunk_db,join_link_db,qa_pairs_db)
     async  def clear_string_task(self,text:str):
         """清除所有文件中的指定内容"""
         logger.info("开始清除")
@@ -138,3 +153,106 @@ class ReadNode:
                 chunk.content = await compress_newlines(chunk.content)
         await chunk_db.update_data_list(chunk_list)
 
+    async def start_create_lora_data(self,data_id:int,sole_uuid:str,sun_num:int):
+        """开始"""
+
+        result = await self.join_link_db.get_data_by_id(data_id)
+        logger.info(f"开始执行任务{sole_uuid},总数{sun_num},排序{result.order_id}")
+        for result.order_id in range(result.order_id,sun_num+1):
+            data_str = await self.chunk_db.get_order_id_by_uuid(uuid=sole_uuid, order_id=result.order_id)
+            content = data_str.content
+            content_len = len(content)
+            if content_len <= 50:
+                continue
+            if content_len > 400:
+                level = 3
+            elif content_len > 200:
+                level = 2
+            else:
+                level = 1
+            # 重试机制
+            retries = 3
+            for attempt in range(retries):
+                try:
+                    data_qa: GeneratedData = self.create_lora_data(content, level)
+                    break
+                except Exception as e:
+                    if attempt < retries - 1:
+                        logger.warning(f"解析失败，等待 5 秒后重试... (第 {attempt + 1} 次)")
+                        await asyncio.sleep(5)
+                    else:
+                        raise
+            data_list:List[QApairs] = []
+            i = 1
+            for item in data_qa.generated:
+                data_list.append(QApairs(question=item.question,answer=item.answer,chunk_id=data_str.id,insert_time=datetime.now(),order_id=i,sole_uuid=sole_uuid),)
+                i+=1
+            await self.qa_pairs_db.insert_list(data_list)
+            data_str.order_id += 1
+            result.order_id += 1
+            await self.join_link_db.update_data_one(data_id,result.order_id)
+        return "完成"
+
+    def create_lora_data(self,data: str, num_records: int)->GeneratedData:
+        """单线程生成数据"""
+        # 构造 prompt
+        prompt = self.prompt_template(data, num_records)
+        # 调用模型
+        result = self.ollamaLLm.invoke(prompt)
+        print(result)
+        # 解析 JSON
+        try:
+            data_dict = json.loads(result)
+            generated_data = GeneratedData(**data_dict)
+        except json.JSONDecodeError:
+            raise ValueError(f"模型输出不是合法 JSON: {result}")
+        return generated_data
+
+
+
+    def prompt_template(self,data: str, num_records: int) -> str:
+        return f"""
+            你是一个【数据生成助手】，只负责生成结构化问答数据。
+            请根据以下上下文内容，生成 {num_records} 条【问答对】。
+            【上下文】
+            {data}
+            【严格输出规则（非常重要）】
+            1. 只能输出一个 JSON 对象，不要输出任何解释性文字
+            2. JSON 必须严格符合以下结构，不允许新增、删除或翻译任何字段名
+            3. 字段名必须 **只允许使用英文**：
+               - question
+               - answer
+            4. 不允许出现以下字段名（即使语义相同也不允许）：
+               - 问题
+               - 答案
+               - 提问
+               - 回答
+            5. 每一条 generated 中的元素都必须同时包含 question 和 answer
+            6. 不允许出现 null、缺失字段或多余字段
+            7. 如果无法生成合格数据，也必须返回合法 JSON，generated 为空数组 []
+            
+            【唯一允许的输出格式示例】
+            {{
+              "generated": [
+                {{
+                  "question": "示例问题",
+                  "answer": "示例回答"
+                }}
+              ]
+            }}
+            现在开始生成数据。
+    """
+async def get_read_node() -> ReadNode:
+    """
+    FastAPI 依赖注入函数，用于获取单例的 ReadNode 实例。
+    - 第一次调用时，会通过 `ReadNode.create()` 初始化一个实例，并绑定到函数属性上。
+    - 后续调用时，直接复用之前创建的实例（保证全局只有一个 ReadNode）。
+    - 好处：避免在每个接口函数里都重复 `await ReadNode.create()`。
+    """
+    # 判断这个函数对象是否已经有一个 "instance" 属性
+    if not hasattr(get_read_node, "instance"):
+        # 如果没有，就创建一个新的 ReadNode 实例并缓存起来
+        get_read_node.instance = await ReadNode.create()
+
+    # 返回全局唯一的 ReadNode 实例
+    return get_read_node.instance

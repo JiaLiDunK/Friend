@@ -1,12 +1,13 @@
 from typing import List
 
-from src.friend.entity.vo.TableData import TableData
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlmodel import select
-from src.friend.entity.vo.QueryTable import QueryTable
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.friend.entity.po.JoinLink import JoinLink
+
 from src.friend.config.DBConfig import async_session
+from src.friend.entity.po.JoinLink import JoinLink
+from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TableData import TableData
 
 
 class JoinLinkDB:
@@ -44,6 +45,17 @@ class JoinLinkDB:
         self.session.add_all(data)
         await self.session.commit()
         return "添加成功"
+    async def get_data_by_id(self,data_id:int)->JoinLink:
+        """根据id获取数据"""
+        statement = select(JoinLink).where(JoinLink.id == data_id)
+        result = await self.session.exec(statement)
+        item = result.one()
+        return JoinLink.model_validate(item)
+    async def update_data_one(self,join_link_id:int,order_id:int):
+        """增加order_id"""
+        statement = update(JoinLink).where(JoinLink.id==join_link_id).values(order_id=order_id)
+        await self.session.exec(statement)
+        await self.session.commit()
 
 # 工厂函数
 async def create_join_link_db():
