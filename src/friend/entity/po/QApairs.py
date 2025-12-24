@@ -18,3 +18,5 @@ class QApairs(SQLModel,table=True):
     order_id:int
     insert_time:datetime
     sole_uuid:str
+    score:int
+    scoring_completed:int

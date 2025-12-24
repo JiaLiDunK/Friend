@@ -13,5 +13,4 @@ class JoinLink(SQLModel,table=True):
     slave_id:int
     order_id:int
     sun_num:int
-    score:int
-    scoring_completed:int
+
