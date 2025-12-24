@@ -1,25 +1,40 @@
 from fastapi import APIRouter, Depends
 from loguru import logger
 
-from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db
+from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db,QApairs
 from src.friend.entity.vo.QueryTable import QueryTable
-
+from src.friend.entity.R import R
 qa_pairsRouter = APIRouter()
 
 @qa_pairsRouter.post("/getList")
 async def get_list(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"查询数据:{data}")
-    return "getList"
+    return ""
 
 @qa_pairsRouter.post("/add")
-async def add(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def add(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"添加数据:{data}")
-    return "add"
+    return R.ok().messages("添加成功")
 @qa_pairsRouter.post("/del")
-async def del_data(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def del_data(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"删除数据:{data}")
-    return "del"
+    return R.ok().messages("添加成功")
 @qa_pairsRouter.post("/update")
-async def update(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def update(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"更新数据:{data}")
-    return "update"
+    return R.ok().messages("添加成功")
+
+@qa_pairsRouter.post("/downLoadJson")
+async def down_load_json(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+    logger.info(f"下载数据:{data}")
+    return R.ok().messages("添加成功")
+
+@qa_pairsRouter.post("/DownLoadJsonByScore")
+async def down_load_json_by_score(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+    logger.info(f"根据分数下载数据:{data}")
+    return R.ok().messages("添加成功")
+
+@qa_pairsRouter.post("/DownLoadJsonByContext")
+async def down_load_json_by_context(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+    logger.info(f"下载带有上下文的数据:{data}")
+    return R.ok().messages("添加成功")
