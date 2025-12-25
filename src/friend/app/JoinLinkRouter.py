@@ -36,20 +36,16 @@ async def create_lora_data(data:JoinLink,books_db:BooksDB=Depends(create_books_d
     if result is None:
         logger.error(f"未找到 ID 为 {data.slave_id} 的书籍")
         return R.error().messages("未找到对应的书籍信息")
-    if result.order_id >= result.sun_num:
-        logger.error(f"ID 为 {data.slave_id} 的书籍已生成lora数据")
-        return R.error().messages("书籍已生成lora数据")
-    await read.start_create_lora_data(data.slave_id,result.uuid,data.sun_num)
-    return R.ok().messages("创建lora数据成功")
+    result = await read.start_create_lora_data(data.slave_id,result.uuid,data.sun_num)
+    return R.ok().messages(result)
 @joinLinkRouter.post("/scoringLoraData")
 async def scoring_lora_data(data:JoinLink,books_db:BooksDB=Depends(create_books_db_by_load),read: ReadNode = Depends(get_read_node)):
     logger.info(f"给数据集打分:{data}")
-    result = await books_db.get_data_by_id(data.slave_id)
-    if result is None:
-        logger.error(f"未找到 ID 为 {data.slave_id} 的书籍")
-        return R.error().messages("未找到对应的书籍信息")
-    if result.scoring_completed is not None:
-        logger.error(f"ID 为 {data.slave_id} 的书籍已打分完毕")
-        return R.error().messages("数据集已打分完毕")
-
+    # result = await books_db.get_data_by_id(data.slave_id)
+    # if result is None:
+    #     logger.error(f"未找到 ID 为 {data.slave_id} 的书籍")
+    #     return R.error().messages("未找到对应的书籍信息")
+    # if result.scoring_completed is not None:
+    #     logger.error(f"ID 为 {data.slave_id} 的书籍已打分完毕")
+    #     return R.error().messages("数据集已打分完毕")
     return R.ok().messages("打分成功")

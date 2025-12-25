@@ -34,6 +34,9 @@ class JoinLinkDB:
         statement = select(JoinLink)
         count_statement = select(func.count()).select_from(JoinLink)
         statement = statement.order_by(JoinLink.id).limit(data.pagesize).offset(data.page_num)
+        if data.key_num:
+            statement = statement.where(JoinLink.master_id == data.key_num)
+            count_statement = count_statement.where(JoinLink.master_id == data.key_num)
         result = await self.session.exec(statement)
         total = await self.session.exec(count_statement)
         item = result.all()

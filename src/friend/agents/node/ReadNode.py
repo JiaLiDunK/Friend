@@ -155,8 +155,10 @@ class ReadNode:
 
     async def start_create_lora_data(self,data_id:int,sole_uuid:str,sun_num:int):
         """开始"""
-
         result = await self.join_link_db.get_data_by_id(data_id)
+        logger.info(f"本次的:{result}")
+        if result.order_id >= result.sun_num:
+            return "早已经生成"
         logger.info(f"开始执行任务{sole_uuid},总数{sun_num},排序{result.order_id}")
         for result.order_id in range(result.order_id,sun_num+1):
             data_str = await self.chunk_db.get_order_id_by_uuid(uuid=sole_uuid, order_id=result.order_id)
@@ -174,7 +176,7 @@ class ReadNode:
             retries = 3
             for attempt in range(retries):
                 try:
-                    data_qa: GeneratedData = self.create_lora_data(content, level)
+                    data_qa: GeneratedData = await self.create_lora_data(content, level)
                     break
                 except Exception as e:
                     if attempt < retries - 1:
@@ -193,12 +195,12 @@ class ReadNode:
             await self.join_link_db.update_data_one(data_id,result.order_id)
         return "完成"
 
-    def create_lora_data(self,data: str, num_records: int)->GeneratedData:
+    async def create_lora_data(self,data: str, num_records: int)->GeneratedData:
         """单线程生成数据"""
         # 构造 prompt
-        prompt = self.prompt_template(data, num_records)
+        prompt = await self.prompt_template(data, num_records)
         # 调用模型
-        result = self.ollamaLLm.invoke(prompt)
+        result = self.ollamaLLm.ainvoke(prompt)
         print(result)
         # 解析 JSON
         try:
@@ -210,7 +212,7 @@ class ReadNode:
 
 
 
-    def prompt_template(self,data: str, num_records: int) -> str:
+    async def prompt_template(self,data: str, num_records: int) -> str:
         return f"""
             你是一个【数据生成助手】，只负责生成结构化问答数据。
             请根据以下上下文内容，生成 {num_records} 条【问答对】。
