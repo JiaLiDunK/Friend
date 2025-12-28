@@ -5,14 +5,18 @@ import uuid
 from datetime import datetime
 from typing import List
 
+from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_ollama import OllamaLLM
 from loguru import logger
 
+from src.friend.agents.tools.DataScoreTools import DataScoreTools
 from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
 from src.friend.app.db.JoinLinkDB import create_join_link_load
+from src.friend.app.db.PromptDB import create_prompt_db_by_load
 from src.friend.app.db.QApairsDB import create_qa_pairs_load
-from src.friend.entity.ai.AIResponseMessage import GeneratedData
+from src.friend.entity.ai.AIResponseMessage import GeneratedData, ScoreData
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.entity.po.QApairs import QApairs
@@ -22,23 +26,26 @@ from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_docu
 
 
 class ReadNode:
-    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db):
+    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db,prompt_db):
         self.books_db = books_db
         self.chunk_db = chunk_db
         self.join_link_db = join_link_db
         self.qa_pairs_db = qa_pairs_db
+        self.prompt_db = prompt_db
         self.ollamaLLm = OllamaLLM(
         model="huihui_ai/qwen3-abliterated:8b",
         reasoning=True,
         temperature=0.2
     )
+
     @classmethod
     async def create(cls):
         books_db = await create_books_db_by_load()
         chunk_db = await create_chunk_db_by_load()
         join_link_db = await create_join_link_load()
         qa_pairs_db = await create_qa_pairs_load()
-        return cls(books_db, chunk_db,join_link_db,qa_pairs_db)
+        prompt_db = await create_prompt_db_by_load()
+        return cls(books_db, chunk_db,join_link_db,qa_pairs_db,prompt_db)
     async  def clear_string_task(self,text:str):
         """清除所有文件中的指定内容"""
         logger.info("开始清除")
@@ -190,9 +197,7 @@ class ReadNode:
                 data_list.append(QApairs(question=item.question,answer=item.answer,chunk_id=data_str.id,insert_time=datetime.now(),order_id=i,sole_uuid=sole_uuid),)
                 i+=1
             await self.qa_pairs_db.insert_list(data_list)
-            data_str.order_id += 1
-            result.order_id += 1
-            await self.join_link_db.update_data_one(data_id,result.order_id)
+            await self.join_link_db.update_data_one(data_id,result.order_id+1)
         return "完成"
 
     async def create_lora_data(self,data: str, num_records: int)->GeneratedData:
@@ -200,7 +205,7 @@ class ReadNode:
         # 构造 prompt
         prompt = await self.prompt_template(data, num_records)
         # 调用模型
-        result = self.ollamaLLm.ainvoke(prompt)
+        result = await self.ollamaLLm.ainvoke(prompt)
         print(result)
         # 解析 JSON
         try:
@@ -210,7 +215,41 @@ class ReadNode:
             raise ValueError(f"模型输出不是合法 JSON: {result}")
         return generated_data
 
-
+    async def create_data_score(self,data_id:int,sole_uuid:str):
+        """给提问打分"""
+        result = await self.join_link_db.get_data_by_id(data_id)
+        logger.info(f"本次的:{result}")
+        for result.scoring_completed in range(result.scoring_completed,result.sun_num+1):
+            data_str = await self.chunk_db.get_order_id_by_uuid(uuid=sole_uuid, order_id=result.scoring_completed)
+            data_list = await self.qa_pairs_db.get_data_by_uuid_order_id(uuid=sole_uuid, chunk_id=result.scoring_completed)
+            for item in data_list:
+                # 重试机制
+                retries = 3
+                for attempt in range(retries):
+                    try:
+                        data: ScoreData = await self.create_score(data_str.content,item)
+                        await self.qa_pairs_db.update_score(data_id=data.id,score=data.score)
+                        break
+                    except Exception as e:
+                        if attempt < retries - 1:
+                            logger.warning(f"解析失败，等待 5 秒后重试... (第 {attempt + 1} 次)")
+                            await asyncio.sleep(5)
+                        else:
+                            raise
+                await self.join_link_db.update_data_one(data_id, result.scoring_completed + 1)
+        return "打分完毕"
+    async def create_score(self,data_str:str,data:QApairs)->ScoreData:
+        """给打分"""
+        system_prompt = await self.prompt_db.get_prompt_by_id(7)
+        system_prompt += "原文:"+data_str+" id:"+str(data.id)+" 问题:"+data.question+" 回答:"+data.answer
+        result = await self.ollamaLLm.ainvoke(system_prompt)
+        logger.info(result)
+        try:
+            data_dict = json.loads(result)
+            score_data = ScoreData(**data_dict)
+        except json.JSONDecodeError:
+            raise ValueError(f"模型输出不是合法 JSON: {result}")
+        return score_data
 
     async def prompt_template(self,data: str, num_records: int) -> str:
         return f"""

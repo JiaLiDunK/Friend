@@ -11,7 +11,8 @@ qa_pairsRouter = APIRouter()
 @qa_pairsRouter.post("/getList")
 async def get_list(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"查询数据:{data}")
-    return ""
+    result = await qa_pairs_db.get_data_list(data)
+    return R.ok().data_dict(result)
 
 @qa_pairsRouter.post("/add")
 async def add(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):

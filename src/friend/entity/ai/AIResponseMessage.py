@@ -19,3 +19,7 @@ class QAPair(BaseModel):
 
 class GeneratedData(BaseModel):
     generated: List[QAPair]
+
+class ScoreData(BaseModel):
+    id:int
+    score:int

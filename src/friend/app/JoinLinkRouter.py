@@ -25,7 +25,7 @@ async def add_list(data:List[SelectOptions],join_link_db:JoinLinkDB=Depends(crea
     insert_data:List[JoinLink] = []
     for item in data:
         sum_num = await chunk_db.get_count_by_id(item.uuid)
-        insert_data.append(JoinLink(master_id=item.master_id,slave_id=item.slave_id,order_id=0,sun_num=sum_num))
+        insert_data.append(JoinLink(master_id=item.master_id,slave_id=item.slave_id,order_id=1,sun_num=sum_num,scoring_completed=0))
     result = await join_link_db.insert_list(insert_data)
     return R.ok().messages(result)
 
@@ -41,11 +41,9 @@ async def create_lora_data(data:JoinLink,books_db:BooksDB=Depends(create_books_d
 @joinLinkRouter.post("/scoringLoraData")
 async def scoring_lora_data(data:JoinLink,books_db:BooksDB=Depends(create_books_db_by_load),read: ReadNode = Depends(get_read_node)):
     logger.info(f"给数据集打分:{data}")
-    # result = await books_db.get_data_by_id(data.slave_id)
-    # if result is None:
-    #     logger.error(f"未找到 ID 为 {data.slave_id} 的书籍")
-    #     return R.error().messages("未找到对应的书籍信息")
-    # if result.scoring_completed is not None:
-    #     logger.error(f"ID 为 {data.slave_id} 的书籍已打分完毕")
-    #     return R.error().messages("数据集已打分完毕")
+    result = await books_db.get_data_by_id(data.slave_id)
+    if result is None:
+        logger.error(f"未找到 ID 为 {data.slave_id} 的书籍")
+        return R.error().messages("未找到对应的书籍信息")
+    await read.create_data_score(data.slave_id,result.uuid)
     return R.ok().messages("打分成功")
