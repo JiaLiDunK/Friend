@@ -11,14 +11,15 @@ qa_pairsRouter = APIRouter()
 @qa_pairsRouter.post("/getList")
 async def get_list(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"查询数据:{data}")
-    return ""
+    result = await qa_pairs_db.get_data_list(data)
+    return R.ok().data_dict(result)
 
 @qa_pairsRouter.post("/add")
 async def add(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"添加数据:{data}")
     await qa_pairs_db.insert_data(data)
     return R.ok().messages("添加成功")
-@qa_pairsRouter.post("/del")
+@qa_pairsRouter.post("/delData")
 async def del_data(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"删除数据:{data}")
     await qa_pairs_db.del_data(data)
@@ -39,7 +40,7 @@ async def down_load_json(data:DownLoadJsonData,qa_pairs_db:QApairsDB=Depends(cre
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
     return R.ok().data_dict(json_str)
 
-@qa_pairsRouter.post("/DownLoadJsonByScore")
+@qa_pairsRouter.post("/downLoadJsonByScore")
 async def down_load_json_by_score(data:DownLoadJsonData,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"根据分数下载数据:{data}")
     qa_list = await qa_pairs_db.get_data_json(data)
@@ -48,7 +49,7 @@ async def down_load_json_by_score(data:DownLoadJsonData,qa_pairs_db:QApairsDB=De
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
     return R.ok().data_dict(json_str)
 
-@qa_pairsRouter.post("/DownLoadJsonByContext")
+@qa_pairsRouter.post("/downLoadJsonByContext")
 async def down_load_json_by_context(data:DownLoadJsonData,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"下载带有上下文的数据:{data}")
     qa_list = await qa_pairs_db.get_data_json_context(data)

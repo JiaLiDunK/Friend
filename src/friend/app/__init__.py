@@ -64,7 +64,7 @@ app.include_router(questionRouter,prefix="/question",tags=["问题"])
 app.include_router(memoryRouter,prefix="/memory",tags=["记忆"])
 app.include_router(searchRouter,prefix="/search",tags=["检索"])
 app.include_router(datasetRouter,prefix="/dataset",tags=["数据集"])
-app.include_router(qa_pairsRouter,prefix="/qa_pairs",tags=["回答问题"])
+app.include_router(qa_pairsRouter,prefix="/qapairs",tags=["回答问题"])
 app.include_router(joinLinkRouter,prefix="/joinLink",tags=["关联的"])
 # 未授权时重定向用户
 # @app.middleware("http")

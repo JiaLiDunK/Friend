@@ -34,12 +34,14 @@ class JoinLinkDB:
         statement = select(JoinLink)
         count_statement = select(func.count()).select_from(JoinLink)
         statement = statement.order_by(JoinLink.id).limit(data.pagesize).offset(data.page_num)
+        if data.key_num:
+            statement = statement.where(JoinLink.master_id == data.key_num)
+            count_statement = count_statement.where(JoinLink.master_id == data.key_num)
         result = await self.session.exec(statement)
         total = await self.session.exec(count_statement)
         item = result.all()
         count = total.one()
-        join_link_list = [JoinLink.model_validate(join_link) for join_link in item]
-        return TableData[JoinLink](total=count, items=join_link_list).model_dump()
+        return TableData[JoinLink](total=count, items=item).model_dump()
     async def insert_list(self,data:List[JoinLink])->str:
         """添加多个数据"""
         self.session.add_all(data)
@@ -54,6 +56,11 @@ class JoinLinkDB:
     async def update_data_one(self,join_link_id:int,order_id:int):
         """增加order_id"""
         statement = update(JoinLink).where(JoinLink.id==join_link_id).values(order_id=order_id)
+        await self.session.exec(statement)
+        await self.session.commit()
+    async def update_data_score(self,join_link_id:int,scoring_completed:int):
+        """增加order_id"""
+        statement = update(JoinLink).where(JoinLink.id==join_link_id).values(scoring_completed=scoring_completed)
         await self.session.exec(statement)
         await self.session.commit()
 
