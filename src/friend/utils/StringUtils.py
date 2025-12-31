@@ -10,6 +10,7 @@ from typing import List, Any
 import ebooklib
 import fitz
 import pdfplumber
+from docx import Document
 from PIL import Image
 from bs4 import BeautifulSoup
 from ebooklib import epub
@@ -37,9 +38,18 @@ async def remove_whitespace(text:str)->str:
 async def remove_whitespace_list(text: List[str]) -> List[str]:
     """删除列表中每个字符串的空白字符"""
     return await asyncio.gather(*(remove_whitespace(t) for t in text))
+async def read_docx(file_path):
+    doc = Document(file_path)
+    content = [] # 读取段落
+    for para in doc.paragraphs:
+        content.append(para.text) # 读取表格
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells: content.append(cell.text)
+    return "\n".join(content)
 
-
-async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, separators: list,encode="utf-8"):
+async def load_chunk_document(path: str, chunk_size: int,
+                              chunk_overlap: int, separators: list,encode="utf-8"):
     """根据文件后缀名加载并切割文档"""
     ext = os.path.splitext(path)[1].lower()  # 获取后缀名
     if ext == ".pdf":
@@ -47,9 +57,12 @@ async def load_chunk_document(path: str, chunk_size: int, chunk_overlap: int, se
         text = await extract_text_pdf_safe(path)
         documents = [Document(page_content=text)]
     elif ext in [".doc", ".docx"]:
+        text = await read_docx(path)
         loader = UnstructuredWordDocumentLoader(path)
         documents = loader.load()
     elif ext in [".txt", ".md"]:
+        with open(path,"r",encoding=encode) as f:
+            text = f.read()
         loader = TextLoader(path, encoding=encode)
         documents = loader.load()
     elif ext == ".epub":
@@ -118,7 +131,6 @@ async def pdf_to_images(pdf_path):
         # 设置较高的缩放因子以提高图像质量
         mat = fitz.Matrix(2.0, 2.0)
         pix = page.get_pixmap(matrix=mat)
-
         # 转换为PIL Image
         img_data = pix.tobytes("ppm")
         img = Image.open(BytesIO(img_data))
@@ -350,23 +362,21 @@ async def chunk_array(arr: List[Any], size: int = 10) -> List[List[Any]]:
     """
     return [arr[i:i + size] for i in range(0, len(arr), size)]
 
-async def chunk_docs(all_text:str):
+
+async def chunk_docs(text:str,chunk_size:int = 612,
+                     min_size:int = 10,
+                     pattern:str = r"(?:[^。！？；.!?;]+[。！？；.!?;]?)")->List[str]:
     """重写切割用的方法"""
-    # 定义切割器
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=612,
-        chunk_overlap=100,
-        separators=[
-        "。", "！", "？", "；",  # 中文句号/感叹号/问号/分号
-        ".", "!", "?", ";",  # 英文句号/感叹号/问号/分号
-        "\n\n",  # 段落
-        "，", ",",  # 中文、英文逗号
-        "：", ":",  # 中文、英文冒号
-        "\n",  # 单换行
-        " ",  # 空格
-        ""  # 最后兜底（强制切割）
-]
-    )
-    # 切割文档
-    docs = text_splitter.split_text(all_text)
-    return docs
+    all_text:List[str] = []
+    text_string = ""
+    sentences = [s.strip() for s in re.findall(pattern,text) if s.strip()]
+    for i,item in enumerate(sentences):
+        text_string += item
+        if i + 1 < len(sentences):# 确保不是最后一个
+            next_item = sentences[i+1]
+            if len(next_item) <= min_size: # 如果下一个块很小就跳过
+                continue
+            if len(next_item)+len(text_string) > chunk_size:
+                all_text.append(text_string+next_item)
+                text_string = ""
+    return all_text
