@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -15,3 +15,7 @@ class AddBooks(BaseModel):
     encode:str
     remark:str
     use:str
+
+class SelectDataByDataSet(BaseModel):
+    selectedIds: List[int]
+    scoreNum: Optional[int] = 0

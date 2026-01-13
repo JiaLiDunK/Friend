@@ -1,8 +1,11 @@
 import json
+from typing import List
 
 from fastapi import APIRouter, Depends
 from loguru import logger
 
+from src.friend.app.db.BooksDB import BooksDB, create_books_db
+from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
 from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db,QApairs
 from src.friend.entity.vo.QueryTable import QueryTable, DownLoadJsonData
 from src.friend.entity.R import R
@@ -10,7 +13,7 @@ qa_pairsRouter = APIRouter()
 
 @qa_pairsRouter.post("/getList")
 async def get_list(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
-    logger.info(f"查询数据:{data}")
+    logger.info(f"查询qa列表的数据:{data}")
     result = await qa_pairs_db.get_data_list(data)
     return R.ok().data_dict(result)
 
@@ -31,10 +34,12 @@ async def update(data:QApairs,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db))
     return R.ok().messages("添加成功")
 
 @qa_pairsRouter.post("/downLoadJson")
-async def down_load_json(data:DownLoadJsonData,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def down_load_json(data:List[int],qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db),
+                         books_db:BooksDB=Depends(create_books_db)):
     logger.info(f"下载原始的数据:{data}")
+    books_uuid = await books_db.get_books_by_ids(data)
     # 转换成前端需要的格式
-    qa_list = await qa_pairs_db.get_data_json(data)
+    qa_list = await qa_pairs_db.get_data_json(books_uuid)
     result = [{"question": qa.question, "answer": qa.answer} for qa in qa_list]
     # 转成 JSON 字符串
     json_str = json.dumps(result, ensure_ascii=False, indent=2)

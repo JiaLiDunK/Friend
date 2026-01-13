@@ -48,11 +48,9 @@ class QApairsDB:
         result = await self.session.exec(statement)
         data:List[QApairs] = result.all()
         return data
-    async def get_data_json(self,data:DownLoadJsonData):
+    async def get_data_json(self,data:List[str]):
         """获取json数据"""
-        statement = select(QApairs).where(QApairs.sole_uuid.in_(data.sole_uuid_list))
-        if data.score is not None or data.score != 0 :
-            statement = statement.where(QApairs.score>=data.score)
+        statement = select(QApairs).where(QApairs.sole_uuid.in_(data))
         result = await self.session.exec(statement)
         result_list:List[QApairs] = result.all()
         return result_list

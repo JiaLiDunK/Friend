@@ -4,7 +4,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from loguru import logger
 
+from src.friend.agents.node.ReadNode import ReadNode, get_read_node
 from src.friend.app.db.DatasetDB import DatasetDB, create_dataset_db
+from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
 from src.friend.entity.R import R
 from src.friend.entity.po.dataset import Dataset
 from src.friend.entity.vo.QueryTable import QueryTable
@@ -33,6 +35,22 @@ async def update(data:Dataset,dataset_db:DatasetDB=Depends(create_dataset_db)):
     logger.info(f"更新数据:{data}")
     result = await dataset_db.update_data(data)
     return R.ok().messages(result)
+@datasetRouter.post("/scoring")
+async def scoring(data:Dataset,join_link_db:JoinLinkDB=Depends(create_join_link_db),
+                  read: ReadNode = Depends(get_read_node)):
+    logger.info(f"给数据集中所有的数据打分:{data}")
+    result = await join_link_db.get_books_data_by_scoring(data.id)
+    await read.create_scoring_by_dataset(result)
+    return R.ok().messages("完成")
+
+@datasetRouter.post("/extract")
+async def extract(data:Dataset,join_link_db:JoinLinkDB=Depends(create_join_link_db),
+                  read: ReadNode = Depends(get_read_node)):
+    logger.info(f"从数据集中所有的数据提取数据:{data}")
+    result = await join_link_db.get_books_data_by_extract(data.id)
+    await read.create_extract_by_dataset(result)
+    return R.ok().messages("完成")
+
 @datasetRouter.post("/getOptions")
 async def get_options(dataset_db:DatasetDB=Depends(create_dataset_db)):
     logger.info("获取选项")

@@ -49,3 +49,13 @@ class DatasetToBook(BaseModel):
     slave_id:int
     order_id:int
     sun_num:int
+
+class JoinLinkBook(BaseModel):
+    __tablename__="join_link"
+    id: int
+    master_id:int
+    slave_id:int
+    order_id:int
+    sun_num:int
+    scoring_completed:int
+    tittle: str

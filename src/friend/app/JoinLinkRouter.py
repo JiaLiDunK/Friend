@@ -16,7 +16,7 @@ joinLinkRouter = APIRouter()
 
 @joinLinkRouter.post("/getList")
 async def get_list(data:QueryTable,join_link_db:JoinLinkDB=Depends(create_join_link_db)):
-    logger.info(f"查询数据:{data}")
+    logger.info(f"查询数据集中的数据:{data}")
     result = await join_link_db.get_data_list(data)
     return R.ok().data_dict(result)
 @joinLinkRouter.post("/addList")

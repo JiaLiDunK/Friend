@@ -1,8 +1,11 @@
+from typing import List
+
 from sqlmodel import select, update, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.Books import Books
+from src.friend.entity.po.JoinLink import JoinLink
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData
 
@@ -48,6 +51,11 @@ class BooksDB:
             statement = select(Books).where(Books.id==data_id)
             result = await self.session.exec(statement)
         return result.one()
+    async def get_books_by_ids(self,data:List[int]):
+        """获取数据集中的所有书籍的uuid"""
+        statement = select(Books.uuid).join(JoinLink,Books.id==JoinLink.slave_id).where(JoinLink.master_id.in_(data))
+        result = await self.session.exec(statement)
+        return result.all()
 
 # 工厂函数（业务内部调用用这个）
 async def create_books_db():

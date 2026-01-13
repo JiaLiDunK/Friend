@@ -13,12 +13,14 @@ from loguru import logger
 from src.friend.agents.tools.DataScoreTools import DataScoreTools
 from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
+from src.friend.app.db.DatasetDB import create_dataset_db
 from src.friend.app.db.JoinLinkDB import create_join_link_load
 from src.friend.app.db.PromptDB import create_prompt_db_by_load
 from src.friend.app.db.QApairsDB import create_qa_pairs_load
 from src.friend.entity.ai.AIResponseMessage import GeneratedData, ScoreData
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.po.JoinLink import JoinLink
 from src.friend.entity.po.QApairs import QApairs
 from src.friend.entity.vo.AddForm import AddBooks
 from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_document, clean_text, remove_substring, \
@@ -107,6 +109,7 @@ class ReadNode:
                 docs = await load_chunk_document(path,
                                                  chunk_size=612,
                                                  chunk_overlap=100,
+                                                 encode=data.encode,
                                                  separators=[
                                                      "\n\n",  # 段落
                                                      "\n",  # 单换行
@@ -161,7 +164,7 @@ class ReadNode:
         await chunk_db.update_data_list(chunk_list)
 
     async def start_create_lora_data(self,data_id:int,sole_uuid:str,sun_num:int):
-        """开始"""
+        """提取出qa"""
         result = await self.join_link_db.get_data_by_id(data_id)
         logger.info(f"本次的:{result}")
         if result.order_id >= result.sun_num:
@@ -218,10 +221,9 @@ class ReadNode:
     async def create_data_score(self,data_id:int,sole_uuid:str):
         """给提问打分"""
         result = await self.join_link_db.get_data_by_id(data_id)
-        logger.info(f"本次的:{result}")
         for result.scoring_completed in range(result.scoring_completed,result.sun_num+1):
             data_str = await self.chunk_db.get_order_id_by_uuid(uuid=sole_uuid, order_id=result.scoring_completed)
-            data_list = await self.qa_pairs_db.get_data_by_uuid_order_id(uuid=sole_uuid, chunk_id=result.scoring_completed)
+            data_list = await self.qa_pairs_db.get_data_by_uuid_order_id(uuid=sole_uuid, chunk_id=data_str.id)
             for item in data_list:
                 # 重试机制
                 retries = 3
@@ -236,7 +238,7 @@ class ReadNode:
                             await asyncio.sleep(5)
                         else:
                             raise
-                await self.join_link_db.update_data_one(data_id, result.scoring_completed + 1)
+                await self.join_link_db.update_data_score(data_id, result.scoring_completed + 1)
         return "打分完毕"
     async def create_score(self,data_str:str,data:QApairs)->ScoreData:
         """给打分"""
@@ -283,6 +285,25 @@ class ReadNode:
             }}
             现在开始生成数据。
     """
+    async def create_scoring_by_dataset(self,data_list:List[JoinLink]):
+        """数据集里面的所有书籍相关的qa进行打分"""
+        logger.info(f"给数据集里面所有的书籍进行进行打分{data_list}")
+        for item in data_list:
+            result = await self.books_db.get_data_by_id(item.slave_id)
+            if result is None:
+                logger.error(f"未找到对应的Id为{item.slave_id}的书籍")
+                break
+            await self.create_data_score(item.slave_id,result.uuid)
+    async def create_extract_by_dataset(self,data_list:List[JoinLink]):
+        """数据集里面的所有书籍相关的提取出qa"""
+        logger.info(f"给数据集里面所有的书籍进行进行提取{data_list}")
+        for item in data_list:
+            result = await self.books_db.get_data_by_id(item.slave_id)
+            if result is None:
+                logger.error(f"未找到对应的Id为{item.slave_id}的书籍")
+                break
+            await self.start_create_lora_data(item.slave_id,result.uuid,item.sun_num)
+
 async def get_read_node() -> ReadNode:
     """
     FastAPI 依赖注入函数，用于获取单例的 ReadNode 实例。
