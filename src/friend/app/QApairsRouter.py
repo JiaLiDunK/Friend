@@ -5,14 +5,14 @@ from fastapi import APIRouter, Depends
 from loguru import logger
 
 from src.friend.app.db.BooksDB import BooksDB, create_books_db
-from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
-from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db,QApairs
-from src.friend.entity.vo.QueryTable import QueryTable, DownLoadJsonData
+from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db, QApairs
 from src.friend.entity.R import R
+from src.friend.entity.vo.QueryTable import QueryTable, DownLoadJsonData, QAQueryTable
+
 qa_pairsRouter = APIRouter()
 
 @qa_pairsRouter.post("/getList")
-async def get_list(data:QueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def get_list(data:QAQueryTable,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"查询qa列表的数据:{data}")
     result = await qa_pairs_db.get_data_list(data)
     return R.ok().data_dict(result)
@@ -43,22 +43,29 @@ async def down_load_json(data:List[int],qa_pairs_db:QApairsDB=Depends(create_qa_
     result = [{"question": qa.question, "answer": qa.answer} for qa in qa_list]
     # 转成 JSON 字符串
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
-    return R.ok().data_dict(json_str)
+    logger.info(f"本次下载大小:{len(json_str)}")
+    return json_str
 
 @qa_pairsRouter.post("/downLoadJsonByScore")
-async def down_load_json_by_score(data:DownLoadJsonData,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def down_load_json_by_score(data:DownLoadJsonData,books_db:BooksDB=Depends(create_books_db)
+                                  ,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"根据分数下载数据:{data}")
-    qa_list = await qa_pairs_db.get_data_json(data)
+    books_uuid = await books_db.get_books_by_ids(data.id_list)
+    qa_list = await qa_pairs_db.get_data_json_by_score(data=books_uuid,score=data.score)
     result = [{"question": qa.question, "answer": qa.answer} for qa in qa_list]
-    # 转成 JSON 字符串
+    # # 转成 JSON 字符串
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
-    return R.ok().data_dict(json_str)
+    logger.info(f"本次下载大小:{len(json_str)}")
+    return json_str
 
 @qa_pairsRouter.post("/downLoadJsonByContext")
-async def down_load_json_by_context(data:DownLoadJsonData,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
+async def down_load_json_by_context(data:DownLoadJsonData,books_db:BooksDB=Depends(create_books_db)
+                                    ,qa_pairs_db:QApairsDB=Depends(create_qa_pairs_db)):
     logger.info(f"下载带有上下文的数据:{data}")
-    qa_list = await qa_pairs_db.get_data_json_context(data)
+    books_uuid = await books_db.get_books_by_ids(data.id_list)
+    qa_list = await qa_pairs_db.get_data_json_context(data=books_uuid,score=data.score)
     result = [{"question": qa.question, "answer": qa.answer} for qa in qa_list]
     # 转成 JSON 字符串
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
-    return R.ok().data_dict(json_str)
+    logger.info(f"本次下载大小:{len(json_str)}")
+    return "放弃放弃"

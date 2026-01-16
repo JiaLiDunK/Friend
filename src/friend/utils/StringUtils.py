@@ -10,9 +10,9 @@ from typing import List, Any
 import ebooklib
 import fitz
 import pdfplumber
-from docx import Document
 from PIL import Image
 from bs4 import BeautifulSoup
+from docx import Document
 from ebooklib import epub
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter

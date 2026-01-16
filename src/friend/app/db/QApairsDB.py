@@ -1,13 +1,15 @@
 from typing import List
 
-from sqlalchemy import func, update
-
-from src.friend.entity.po.Chunk import Chunk
-from src.friend.entity.vo.QueryTable import DownLoadJsonData, QueryTable
+from sqlalchemy import func, update, literal
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from src.friend.config.DBConfig import async_session
+from src.friend.entity.po.Books import Books
+from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.po.JoinLink import JoinLink
 from src.friend.entity.po.QApairs import QApairs
+from src.friend.entity.vo.QueryTable import QueryTable, QAQueryTable
 from src.friend.entity.vo.TableData import TableData
 
 
@@ -54,26 +56,44 @@ class QApairsDB:
         result = await self.session.exec(statement)
         result_list:List[QApairs] = result.all()
         return result_list
-    async def get_data_json_context(self,data:DownLoadJsonData):
+    async def get_data_json_by_score(self,data:List[str],score:int):
+        """获取json数据带有分数"""
+        statement = select(QApairs).where(QApairs.sole_uuid.in_(data),QApairs.score>=score)
+        result = await self.session.exec(statement)
+        result_list: List[QApairs] = result.all()
+        return result_list
+    async def get_data_json_context(self,data:List[str],score:int):
         """获取json数据，有上下文"""
-        statement = (select(QApairs.answer,
-                            ("context:"+Chunk.content+" ;"+QApairs.question).label("question"),
-                            Chunk.content)
-                     .join(Chunk, QApairs.sole_uuid == Chunk.uuid).
-        where(QApairs.sole_uuid.in_(data.sole_uuid_list)))
-        if data.score is not None and data.score != 0:
-            statement = statement.where(QApairs.score == data.score)
+        statement = (
+            select(
+                QApairs.answer,
+                func.concat(
+                    literal("context:"),
+                    Chunk.content,
+                    literal("|"),
+                    QApairs.question
+                ).label("question")
+            )
+            .select_from(QApairs)
+            .join(Chunk, QApairs.chunk_id == Chunk.id, isouter=True)
+        ).where(QApairs.sole_uuid.in_(data),QApairs.score>=score)
         result = await self.session.exec(statement)
         result_list:List[QApairs] = result.all()
         return result_list
-    async def get_data_list(self,data:QueryTable):
+    async def get_data_list(self,data:QAQueryTable):
         """获取list列表"""
-        statement = select(QApairs)
-        statement_count = select(func.count()).select_from(QApairs)
+        statement = select(QApairs).join(Books,Books.uuid==QApairs.sole_uuid).join(JoinLink,JoinLink.slave_id==Books.id)
+        statement_count = select(func.count()).select_from(QApairs).join(Books,Books.uuid==QApairs.sole_uuid).join(JoinLink,JoinLink.slave_id==Books.id)
         # 动态拼接查询条件
         if data.keywords:
             statement = statement.where(QApairs.sole_uuid.like(f"{data.keywords}"))
             statement_count = statement_count.where(QApairs.sole_uuid.like(f"{data.keywords}"))
+        if data.dataset_id:
+            statement = statement.where(JoinLink.master_id==data.dataset_id)
+            statement_count = statement_count.where(JoinLink.master_id==data.dataset_id)
+        if data.books_id:
+            statement = statement.where(JoinLink.slave_id == data.books_id)
+            statement_count = statement_count.where(JoinLink.slave_id == data.books_id)
         statement = statement.order_by(QApairs.score and QApairs.id).limit(data.pagesize).offset(data.page_num)
         res = await self.session.exec(statement)
         total = await self.session.exec(statement_count)

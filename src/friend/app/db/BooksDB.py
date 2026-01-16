@@ -8,6 +8,7 @@ from src.friend.entity.po.Books import Books
 from src.friend.entity.po.JoinLink import JoinLink
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData
+from src.friend.entity.vo.TypeOptions import TypeOptions, JoinOption
 
 
 class BooksDB:
@@ -34,7 +35,7 @@ class BooksDB:
         if data.keywords:
             statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
             count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
-        statement = statement.order_by(Books.type_id).limit(data.pagesize).offset(data.page_num)
+        statement = statement.order_by(Books.type_id).order_by(Books.id).limit(data.pagesize).offset(data.page_num)
         result = await self.session.exec(statement)
         total = await self.session.exec(count_statement)
         item = result.all()
@@ -56,7 +57,21 @@ class BooksDB:
         statement = select(Books.uuid).join(JoinLink,Books.id==JoinLink.slave_id).where(JoinLink.master_id.in_(data))
         result = await self.session.exec(statement)
         return result.all()
-
+    async def get_books_option(self,data:JoinOption):
+        """获取数据集的id"""
+        statement = select(Books.tittle,Books.id).join(JoinLink,JoinLink.slave_id==Books.id)
+        if data.dataset_id:
+            statement = statement.where(JoinLink.master_id==data.dataset_id)
+        result = await self.session.exec(statement)
+        item = result.all()
+        option_list: List[TypeOptions] = [
+            TypeOptions(
+                value=record.id,
+                label=record.tittle
+            )
+            for record in item
+        ]
+        return option_list
 # 工厂函数（业务内部调用用这个）
 async def create_books_db():
     async with async_session() as session:

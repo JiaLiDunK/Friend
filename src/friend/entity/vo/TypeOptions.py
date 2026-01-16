@@ -9,3 +9,6 @@ class SelectOptions(BaseModel):
     master_id: int
     slave_id: int
     uuid:str
+
+class JoinOption(BaseModel):
+    dataset_id:int

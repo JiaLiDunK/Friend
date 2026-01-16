@@ -17,5 +17,14 @@ class SearchData(BaseModel):
 
 class DownLoadJsonData(BaseModel):
     """下载json数据"""
-    sole_uuid_list:List[str]
+    id_list:List[int]
     score:int
+
+class QAQueryTable(BaseModel):
+    """分页查询"""
+    pagesize: int
+    page_num: int
+    keywords: str = None
+    key_num: int = None
+    dataset_id:int = None
+    books_id: int = None

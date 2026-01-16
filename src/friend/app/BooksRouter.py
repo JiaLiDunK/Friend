@@ -14,6 +14,7 @@ from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.entity.vo.QueryTable import QueryTable
+from src.friend.entity.vo.TypeOptions import JoinOption
 
 booksRouter = APIRouter()
 
@@ -105,3 +106,10 @@ async def vector_all_books(data_base_node:DataBaseNode=Depends(get_data_base_nod
     logger.info("向量化所有的数据")
     await data_base_node.vector_all_books()
     return R.ok().messages("向量化成功")
+
+@booksRouter.post("/getOptions")
+async def get_options(data:JoinOption,book_db:BooksDB=Depends(create_books_db)):
+    """获取数据"""
+    logger.info("获取books的选项")
+    result = await book_db.get_books_option(data)
+    return R.ok().data_dict(result)

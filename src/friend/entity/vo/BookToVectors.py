@@ -59,3 +59,4 @@ class JoinLinkBook(BaseModel):
     sun_num:int
     scoring_completed:int
     tittle: str
+    description: str

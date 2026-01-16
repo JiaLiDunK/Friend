@@ -5,15 +5,11 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from langchain.agents import create_openai_tools_agent, AgentExecutor
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_ollama import OllamaLLM
 from loguru import logger
 
-from src.friend.agents.tools.DataScoreTools import DataScoreTools
 from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
-from src.friend.app.db.DatasetDB import create_dataset_db
 from src.friend.app.db.JoinLinkDB import create_join_link_load
 from src.friend.app.db.PromptDB import create_prompt_db_by_load
 from src.friend.app.db.QApairsDB import create_qa_pairs_load
@@ -183,7 +179,7 @@ class ReadNode:
             else:
                 level = 1
             # 重试机制
-            retries = 3
+            retries = 5
             for attempt in range(retries):
                 try:
                     data_qa: GeneratedData = await self.create_lora_data(content, level)
@@ -191,7 +187,7 @@ class ReadNode:
                 except Exception as e:
                     if attempt < retries - 1:
                         logger.warning(f"解析失败，等待 5 秒后重试... (第 {attempt + 1} 次)")
-                        await asyncio.sleep(5)
+                        await asyncio.sleep(5*attempt)
                     else:
                         raise
             data_list:List[QApairs] = []
@@ -302,7 +298,7 @@ class ReadNode:
             if result is None:
                 logger.error(f"未找到对应的Id为{item.slave_id}的书籍")
                 break
-            await self.start_create_lora_data(item.slave_id,result.uuid,item.sun_num)
+            await self.start_create_lora_data(item.id,result.uuid,item.sun_num)
 
 async def get_read_node() -> ReadNode:
     """

@@ -7,6 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.friend.config.DBConfig import async_session
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.JoinLink import JoinLink
+from src.friend.entity.po.dataset import Dataset
 from src.friend.entity.vo.BookToVectors import JoinLinkBook
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData
@@ -33,7 +34,7 @@ class JoinLinkDB:
         return "删除成功"
     async def get_data_list(self,data:QueryTable):
         """获取数据"""
-        statement = select(JoinLink,Books.tittle).join(Books,JoinLink.slave_id==Books.id)
+        statement = select(JoinLink,Books.tittle,Dataset.description).join(Books,JoinLink.slave_id==Books.id).join(Dataset,JoinLink.master_id==Dataset.id)
         count_statement = select(func.count()).select_from(JoinLink)
         statement = statement.order_by(JoinLink.id).limit(data.pagesize).offset(data.page_num)
         if data.key_num:
@@ -43,7 +44,7 @@ class JoinLinkDB:
         total = await self.session.exec(count_statement)
         rows = result.all()  # 每个是 Row: (JoinLink, tittle)
         items = []
-        for join_link, tittle in rows:
+        for join_link, tittle,description in rows:
             items.append(
                 JoinLinkBook(
                     id=join_link.id,
@@ -53,6 +54,7 @@ class JoinLinkDB:
                     sun_num=join_link.sun_num,
                     scoring_completed=join_link.scoring_completed,
                     tittle=tittle,
+                    description=description,
                 )
             )
         count = total.one()
@@ -80,12 +82,12 @@ class JoinLinkDB:
         await self.session.commit()
     async def get_books_data_by_scoring(self,ids:int):
         """根据主id获取未提取的书籍id"""
-        statement = select(JoinLink).where(JoinLink.master_id==ids,JoinLink.order_id <= JoinLink.sun_num)
+        statement = select(JoinLink).where(JoinLink.master_id==ids,JoinLink.order_id <= JoinLink.sun_num).order_by(JoinLink.id)
         result = await self.session.exec(statement)
         return result.all()
     async def get_books_data_by_extract(self,ids:int):
         """根据主id获取未打分的书籍id"""
-        statement = select(JoinLink).where(JoinLink.master_id==ids,JoinLink.scoring_completed <= JoinLink.sun_num)
+        statement = select(JoinLink).where(JoinLink.master_id==ids,JoinLink.scoring_completed <= JoinLink.sun_num).order_by(JoinLink.id)
         result = await self.session.exec(statement)
         return result.all()
 

@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from langchain_core.tools import StructuredTool
 from loguru import logger
+
 from src.friend.app.db.QApairsDB import create_qa_pairs_load
 
 
