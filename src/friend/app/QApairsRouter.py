@@ -7,7 +7,7 @@ from loguru import logger
 from src.friend.app.db.BooksDB import BooksDB, create_books_db
 from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db, QApairs
 from src.friend.entity.R import R
-from src.friend.entity.vo.QueryTable import QueryTable, DownLoadJsonData, QAQueryTable
+from src.friend.entity.vo.QueryTable import DownLoadJsonData, QAQueryTable
 
 qa_pairsRouter = APIRouter()
 

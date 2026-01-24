@@ -179,17 +179,19 @@ class ReadNode:
             else:
                 level = 1
             # 重试机制
-            retries = 5
+            retries = 3
             for attempt in range(retries):
                 try:
                     data_qa: GeneratedData = await self.create_lora_data(content, level)
-                    break
                 except Exception as e:
                     if attempt < retries - 1:
                         logger.warning(f"解析失败，等待 5 秒后重试... (第 {attempt + 1} 次)")
-                        await asyncio.sleep(5*attempt)
+                        await asyncio.sleep(5*attempt*attempt)
                     else:
-                        raise
+                        retries = 0
+                        # raise
+            if retries == 0 :
+                break
             data_list:List[QApairs] = []
             i = 1
             for item in data_qa.generated:
@@ -227,13 +229,12 @@ class ReadNode:
                     try:
                         data: ScoreData = await self.create_score(data_str.content,item)
                         await self.qa_pairs_db.update_score(data_id=data.id,score=data.score)
-                        break
                     except Exception as e:
                         if attempt < retries - 1:
                             logger.warning(f"解析失败，等待 5 秒后重试... (第 {attempt + 1} 次)")
                             await asyncio.sleep(5)
                         else:
-                            raise
+                            break
                 await self.join_link_db.update_data_score(data_id, result.scoring_completed + 1)
         return "打分完毕"
     async def create_score(self,data_str:str,data:QApairs)->ScoreData:
@@ -269,7 +270,9 @@ class ReadNode:
             5. 每一条 generated 中的元素都必须同时包含 question 和 answer
             6. 不允许出现 null、缺失字段或多余字段
             7. 如果无法生成合格数据，也必须返回合法 JSON，generated 为空数组 []
-            
+            6. JSON 中禁止使用反斜杠转义
+                - 使用真实 Unicode 字符
+                - 如果必须展示写法，用文字描述，不要用 
             【唯一允许的输出格式示例】
             {{
               "generated": [

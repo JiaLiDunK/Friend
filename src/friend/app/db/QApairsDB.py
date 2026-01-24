@@ -9,7 +9,7 @@ from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.entity.po.JoinLink import JoinLink
 from src.friend.entity.po.QApairs import QApairs
-from src.friend.entity.vo.QueryTable import QueryTable, QAQueryTable
+from src.friend.entity.vo.QueryTable import QAQueryTable
 from src.friend.entity.vo.TableData import TableData
 
 
