@@ -64,8 +64,8 @@ async def down_load_json_by_context(data:DownLoadJsonData,books_db:BooksDB=Depen
     logger.info(f"下载带有上下文的数据:{data}")
     books_uuid = await books_db.get_books_by_ids(data.id_list)
     qa_list = await qa_pairs_db.get_data_json_context(data=books_uuid,score=data.score)
-    result = [{"question": qa.question, "answer": qa.answer} for qa in qa_list]
+    result = [{"context":qa.context,"question": qa.question, "answer": qa.answer} for qa in qa_list]
     # 转成 JSON 字符串
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
     logger.info(f"本次下载大小:{len(json_str)}")
-    return "放弃放弃"
+    return json_str

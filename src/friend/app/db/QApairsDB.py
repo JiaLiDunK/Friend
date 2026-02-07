@@ -67,16 +67,13 @@ class QApairsDB:
         statement = (
             select(
                 QApairs.answer,
-                func.concat(
-                    literal("context:"),
-                    Chunk.content,
-                    literal("|"),
-                    QApairs.question
-                ).label("question")
+                QApairs.question.label("question"),
+                Chunk.content.label("context"),
             )
             .select_from(QApairs)
             .join(Chunk, QApairs.chunk_id == Chunk.id, isouter=True)
-        ).where(QApairs.sole_uuid.in_(data),QApairs.score>=score)
+            .where(QApairs.sole_uuid.in_(data))
+        )
         result = await self.session.exec(statement)
         result_list:List[QApairs] = result.all()
         return result_list

@@ -189,9 +189,11 @@ class ReadNode:
                         await asyncio.sleep(5*attempt*attempt)
                     else:
                         retries = 0
+                        break
                         # raise
             if retries == 0 :
-                break
+                await self.join_link_db.update_data_one(data_id, result.order_id + 1)
+                continue
             data_list:List[QApairs] = []
             i = 1
             for item in data_qa.generated:
@@ -204,10 +206,9 @@ class ReadNode:
     async def create_lora_data(self,data: str, num_records: int)->GeneratedData:
         """单线程生成数据"""
         # 构造 prompt
-        prompt = await self.prompt_template(data, num_records)
+        prompt =  await self.prompt_template(data, num_records)
         # 调用模型
         result = await self.ollamaLLm.ainvoke(prompt)
-        print(result)
         # 解析 JSON
         try:
             data_dict = json.loads(result)
