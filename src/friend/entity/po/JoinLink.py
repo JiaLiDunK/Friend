@@ -14,3 +14,4 @@ class JoinLink(SQLModel,table=True):
     order_id:int
     sun_num:int
     scoring_completed:int
+    clear_id: int

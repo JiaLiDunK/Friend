@@ -27,6 +27,7 @@ class LLMManager:
             start_time = time.perf_counter()
             try:
                 result = await func(*args,**kwargs)
+                logger.info("================\n"+result+"\n=========")
                 end_time = time.perf_counter()
                 log.elapsed_times = end_time - start_time
                 ai_message = getattr(result.message,"response_metadata",{})
@@ -35,6 +36,37 @@ class LLMManager:
                 log.input_tokens = token_usage.get("input_tokens",0)
                 log.output_tokens = token_usage.get("output_tokens",0)
                 log.total_tokens = token_usage.get("total_tokens",0)
+                log.call_type = 12
+                log.status = 14
+                log.count = 1
+                await self.llm_call_logs.insert_data(log)
+                return result
+            except Exception as e:
+                log.elapsed_times = time.perf_counter() - start_time
+                log.status = 15
+                log.error_message = str(e)
+                await self.llm_call_logs.insert_data(log)
+                raise e
+        return wrapper
+
+    def ollama_chat_token_time_logger(self, func):
+        """这个是记录ollama进行chat的token和耗时"""
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            log = LlmCallLogs()
+            log.create_time = datetime.now()
+            log.function_name = func.__name__
+            start_time = time.perf_counter()
+            try:
+                result = await func(*args, **kwargs)
+                end_time = time.perf_counter()
+                log.elapsed_times = end_time - start_time
+                gen = result.generations[0][0]
+                info = gen.generation_info
+                log.input_tokens = info.get("prompt_eval_count")
+                log.model_name = info.get("model")
+                log.output_tokens = info.get("eval_count")
+                log.total_tokens = info.get("eval_count") + info.get("prompt_eval_count")
                 log.call_type = 12
                 log.status = 14
                 log.count = 1

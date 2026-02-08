@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from loguru import logger
 
+from src.friend.agents.node.ChatNode import ChatNode, get_chat_node
 from src.friend.agents.node.ReadNode import ReadNode, get_read_node
 from src.friend.app.db.DatasetDB import DatasetDB, create_dataset_db
 from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
@@ -56,3 +57,11 @@ async def get_options(dataset_db:DatasetDB=Depends(create_dataset_db)):
     logger.info("获取选项")
     result = await dataset_db.get_options()
     return R.ok().data_dict(result)
+
+@datasetRouter.post("/clearChunk")
+async def clear_chunk(data:Dataset,join_link_db:JoinLinkDB=Depends(create_join_link_db),
+                      chat_node:ChatNode=Depends(get_chat_node)):
+    logger.info(f"清理一下指定文本的chunk:\n{data}")
+    # result = await join_link_db.get_books_data_by_extract(data.id)
+    await chat_node.user_ollama_qwen3_abliterated_8b_7("你好啊")
+    return R.ok().messages("完成")
