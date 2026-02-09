@@ -1,4 +1,4 @@
-from datetime import datetime
+from typing import List
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -18,9 +18,13 @@ class ClearChunkDB:
 
     async def inset_data_one(self,data:ClearChunk):
         """插入数据"""
-        data.insert_date = datetime.now()
         self.session.add(data)
         await self.session.commit()
+    async def insert_data_list(self,data:List[ClearChunk]):
+        """批量插入"""
+        self.session.add_all(data)
+        await self.session.commit()
+
 # 工厂函数
 async def create_agents_db():
     async with async_session() as session:

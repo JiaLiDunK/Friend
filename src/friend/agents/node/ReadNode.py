@@ -8,6 +8,7 @@ from typing import List
 from langchain_ollama import OllamaLLM
 from loguru import logger
 
+from src.friend.agents.node.ChatNode import get_chat_node, ChatNode
 from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
 from src.friend.app.db.JoinLinkDB import create_join_link_load
@@ -24,12 +25,13 @@ from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_docu
 
 
 class ReadNode:
-    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db,prompt_db):
+    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db,prompt_db,chat_node:ChatNode):
         self.books_db = books_db
         self.chunk_db = chunk_db
         self.join_link_db = join_link_db
         self.qa_pairs_db = qa_pairs_db
         self.prompt_db = prompt_db
+        self.chat_node = chat_node
         self.ollamaLLm = OllamaLLM(
         model="huihui_ai/qwen3-abliterated:8b",
         reasoning=True,
@@ -43,7 +45,8 @@ class ReadNode:
         join_link_db = await create_join_link_load()
         qa_pairs_db = await create_qa_pairs_load()
         prompt_db = await create_prompt_db_by_load()
-        return cls(books_db, chunk_db,join_link_db,qa_pairs_db,prompt_db)
+        chat_node = await get_chat_node()
+        return cls(books_db, chunk_db,join_link_db,qa_pairs_db,prompt_db,chat_node)
     async  def clear_string_task(self,text:str):
         """清除所有文件中的指定内容"""
         logger.info("开始清除")
@@ -216,6 +219,20 @@ class ReadNode:
         except json.JSONDecodeError:
             raise ValueError(f"模型输出不是合法 JSON: {result}")
         return generated_data
+    async def clear_chunk(self,data:str)->list[str]:
+        """单线程清数据"""
+        # 构造 prompt
+        prompt = await self.prompt_clear_template(data)
+        # 调用模型
+        result = await self.chat_node.user_ollama_qwen3_abliterated_8b_7(prompt)
+        # 解析 JSON
+        try:
+            data_dict = json.loads(result)
+            generated_data = data_dict["context"]
+        except json.JSONDecodeError:
+            raise ValueError(f"模型输出不是合法 JSON: {result}")
+        print(generated_data)
+        return generated_data
 
     async def create_data_score(self,data_id:int,sole_uuid:str):
         """给提问打分"""
@@ -285,6 +302,34 @@ class ReadNode:
             }}
             现在开始生成数据。
     """
+    async def prompt_clear_template(self,data:str)->str:
+        return f"""
+            你是一个技术文档结构化工具。
+            任务：
+            将给定的原始技术文本，整理为“语义段落文本”，并以 JSON 形式返回。
+            规则（非常重要）：
+            1. 只基于原文信息，不允许添加新事实
+            2. 不进行主观评价或扩展解释
+            3. 不保留示例输出、冗余描述
+            4. 每一段只表达一个独立、完整的事实
+            5. 不要包含任何代码，只总结代码所表达的行为
+            6. 使用简洁、客观的陈述句
+            7. 每个语义段落对应数组中的一个字符串元素
+            8. 不要在段落内容中使用引号或编号
+            9. 输出必须是**合法 JSON**，且只能包含 JSON 内容，不得包含任何解释性文字
+            输出格式（必须严格遵守）：
+            {{
+              "context": [
+                "语义段落一",
+                "语义段落二",
+                "语义段落三"
+              ]
+            }}
+            原始文本：
+            <<<
+            {data}
+            >>>
+     """
     async def create_scoring_by_dataset(self,data_list:List[JoinLink]):
         """数据集里面的所有书籍相关的qa进行打分"""
         logger.info(f"给数据集里面所有的书籍进行进行打分{data_list}")

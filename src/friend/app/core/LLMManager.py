@@ -71,7 +71,7 @@ class LLMManager:
                 log.status = 14
                 log.count = 1
                 await self.llm_call_logs.insert_data(log)
-                return result
+                return result.generations[0][0].text
             except Exception as e:
                 log.elapsed_times = time.perf_counter() - start_time
                 log.status = 15

@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import func, update, literal
+from sqlalchemy import func, update
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 

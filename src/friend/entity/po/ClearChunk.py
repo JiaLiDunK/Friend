@@ -1,4 +1,3 @@
-from datetime import datetime
 import sqlalchemy.dialects.postgresql as postgresql
 from sqlmodel import SQLModel, Field, Column
 
@@ -13,5 +12,5 @@ class ClearChunk(SQLModel,table=True):
     )
     type_id: int
     content: str
-    insert_date: datetime
     chunk_id: int
+    order_id: int
