@@ -49,11 +49,11 @@ async def read_and_save(paths:List[str]):
         ""  # 最后兜底（强制切割）
 ])
         filename = os.path.basename(path)
-        book = Books(title=filename,uuid=sole_id,type_id=0)
+        book = Books(tittle=filename,uuid=sole_id,type_id=0)
         chunk_list:List[Chunk] = []
         i = 1
         for doc in docs:
-            chunk = Chunk(content=doc.page_content,order_id=i,title_id=1,uuid=sole_id,type_id=2)
+            chunk = Chunk(content=doc.page_content,order_id=i,tittle_id=1,uuid=sole_id,type_id=2)
             chunk_list.append(chunk)
 async def task(name, sec):
     print(f"开始任务 {name}")

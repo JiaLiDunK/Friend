@@ -11,12 +11,14 @@ from loguru import logger
 from src.friend.agents.node.ChatNode import get_chat_node, ChatNode
 from src.friend.app.db.BooksDB import create_books_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db, create_chunk_db_by_load
+from src.friend.app.db.ClearChunkDB import create_clear_chunk_db_by_load
 from src.friend.app.db.JoinLinkDB import create_join_link_load
 from src.friend.app.db.PromptDB import create_prompt_db_by_load
 from src.friend.app.db.QApairsDB import create_qa_pairs_load
 from src.friend.entity.ai.AIResponseMessage import GeneratedData, ScoreData
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.po.ClearChunk import ClearChunk
 from src.friend.entity.po.JoinLink import JoinLink
 from src.friend.entity.po.QApairs import QApairs
 from src.friend.entity.vo.AddForm import AddBooks
@@ -25,12 +27,13 @@ from src.friend.utils.StringUtils import split_all_files_in_dir, load_chunk_docu
 
 
 class ReadNode:
-    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db,prompt_db,chat_node:ChatNode):
+    def __init__(self,books_db,chunk_db,join_link_db,qa_pairs_db,prompt_db,chat_node:ChatNode,clear_chunk_db):
         self.books_db = books_db
         self.chunk_db = chunk_db
         self.join_link_db = join_link_db
         self.qa_pairs_db = qa_pairs_db
         self.prompt_db = prompt_db
+        self.clear_chunk_db = clear_chunk_db
         self.chat_node = chat_node
         self.ollamaLLm = OllamaLLM(
         model="huihui_ai/qwen3-abliterated:8b",
@@ -46,7 +49,8 @@ class ReadNode:
         qa_pairs_db = await create_qa_pairs_load()
         prompt_db = await create_prompt_db_by_load()
         chat_node = await get_chat_node()
-        return cls(books_db, chunk_db,join_link_db,qa_pairs_db,prompt_db,chat_node)
+        clear_chunk_db = await create_clear_chunk_db_by_load()
+        return cls(books_db, chunk_db,join_link_db,qa_pairs_db,prompt_db,chat_node,clear_chunk_db)
     async  def clear_string_task(self,text:str):
         """清除所有文件中的指定内容"""
         logger.info("开始清除")
@@ -84,7 +88,7 @@ class ReadNode:
             chunk_list: List[Chunk] = []
             i = 1
             for doc in docs:
-                chunk = Chunk(content=doc.page_content, order_id=i, title_id=1, uuid=uuids, type_id=2)
+                chunk = Chunk(content=doc.page_content, order_id=i, tittle_id=1, uuid=uuids, type_id=2)
                 chunk_list.append(chunk)
                 i += 1
             await self.chunk_db.update_data_list(chunk_list)
@@ -267,6 +271,35 @@ class ReadNode:
         except json.JSONDecodeError:
             raise ValueError(f"模型输出不是合法 JSON: {result}")
         return score_data
+    async def clear_database(self,data:List[JoinLink]):
+        """清理数据集中的数据"""
+        logger.info(f"清理所在的数据集的信息{data}")
+        for item in data:
+            book_data = await self.books_db.get_data_by_id(item.slave_id)
+            if book_data is None:
+                logger.error(f"未找到对应的Id为{item.slave_id}的书籍")
+                break
+            await self.clear_book(book_data,item.clear_id,item.sun_num,join_link_id=item.id)
+    async def clear_book(self,data:Books,clear_id:int,sum_id:int,join_link_id:int):
+        """清理书籍的"""
+        for ids in range(clear_id,sum_id+1):
+            chunk_one:Chunk = await self.chunk_db.get_order_id_by_uuid(uuid=data.uuid,order_id=ids)
+            result = await self.clear_chunk(chunk_one.content)
+            if result is None or len(result) == 0:
+                await self.join_link_db.update_clear_one(ids=join_link_id,clear_id=ids+1)
+                break
+            clear_chunk_list:List[ClearChunk] = []
+            i = 1
+            for item in result:
+                clear_chunk_list.append(ClearChunk(
+                    type_id = 30,
+                    content = item,
+                    chunk_id = chunk_one.id,
+                    order_id = i
+                ))
+                i += 1
+            await self.clear_chunk_db.insert_data_list(clear_chunk_list)
+            await self.join_link_db.update_clear_one(ids=join_link_id, clear_id=ids + 1)
 
     async def prompt_template(self,data: str, num_records: int) -> str:
         return f"""
@@ -307,7 +340,7 @@ class ReadNode:
             你是一个技术文档结构化工具。
             任务：
             将给定的原始技术文本，整理为“语义段落文本”，并以 JSON 形式返回。
-            规则（非常重要）：
+            核心规则（非常重要）：
             1. 只基于原文信息，不允许添加新事实
             2. 不进行主观评价或扩展解释
             3. 不保留示例输出、冗余描述
@@ -316,7 +349,22 @@ class ReadNode:
             6. 使用简洁、客观的陈述句
             7. 每个语义段落对应数组中的一个字符串元素
             8. 不要在段落内容中使用引号或编号
-            9. 输出必须是**合法 JSON**，且只能包含 JSON 内容，不得包含任何解释性文字
+            9. 输出必须是合法 JSON，且只能包含 JSON 内容，不得包含任何解释性文字
+            【内容过滤规则（必须严格执行）】：
+            以下类型内容 **必须直接忽略，不得进入 context 数组**：
+            - 目录或目录项（如 Table of Contents）
+            - 章节名、小节名、标题行
+            - 仅用于导航或结构说明的文本
+            - 前言、引言、版权信息、版本说明
+            - 形如“第 X 章”“X.Y”“X.Y.Z”的标题性文本
+            - 不包含具体技术事实、仅起到组织作用的行
+            判断标准：
+            - 如果一行或一段文本的作用是“标识位置或结构”，而不是“陈述技术事实”，则必须丢弃
+            - 只有在文本明确描述了技术概念、行为、机制或规则时，才允许生成语义段落
+            【输出数量控制规则】：
+            - 仅对有效的技术事实生成语义段落
+            - 根据原文中“实际技术内容”的数量生成，不得因为文本长度强行补充段落
+            - 如果原文大部分是目录或标题，应只输出极少量或空数组
             输出格式（必须严格遵守）：
             {{
               "context": [
@@ -325,10 +373,12 @@ class ReadNode:
                 "语义段落三"
               ]
             }}
+            
             原始文本：
             <<<
             {data}
             >>>
+
      """
     async def create_scoring_by_dataset(self,data_list:List[JoinLink]):
         """数据集里面的所有书籍相关的qa进行打分"""

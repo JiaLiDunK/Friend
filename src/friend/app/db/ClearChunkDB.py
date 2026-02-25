@@ -26,9 +26,9 @@ class ClearChunkDB:
         await self.session.commit()
 
 # 工厂函数
-async def create_agents_db():
+async def create_clear_chunk_db():
     async with async_session() as session:
         yield ClearChunkDB(session)
-async def create_agents_db_by_load():
+async def create_clear_chunk_db_by_load():
     async with async_session() as session:
         return ClearChunkDB(session)

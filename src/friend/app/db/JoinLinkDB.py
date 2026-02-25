@@ -90,8 +90,16 @@ class JoinLinkDB:
         statement = select(JoinLink).where(JoinLink.master_id==ids,JoinLink.scoring_completed <= JoinLink.sun_num).order_by(JoinLink.id)
         result = await self.session.exec(statement)
         return result.all()
-
-
+    async def get_books_data_by_clear(self,ids:int):
+        """根据数据集的id获取数据"""
+        statement = select(JoinLink).where(JoinLink.master_id==ids,JoinLink.clear_id <= JoinLink.sun_num).order_by(JoinLink.id)
+        result = await self.session.exec(statement)
+        return result.all()
+    async def update_clear_one(self,ids:int,clear_id:int):
+        """clear_id的id加一"""
+        statement = update(JoinLink).where(JoinLink.id==ids).values(clear_id=clear_id)
+        await self.session.exec(statement)
+        await self.session.commit()
 # 工厂函数
 async def create_join_link_db():
     async with async_session() as session:

@@ -57,11 +57,11 @@ class BookKnowledgeIdDB:
                 uuid=bk.uuid,
                 knowledge_base_id=bk.knowledge_base_id,
                 type_id=bk.type_id,
-                tittle=title,
+                tittle=tittle,
                 data_base_remark=data_base_remark_,
                 collection_remark=collection_remark_
             )
-            for bk, title, data_base_remark_, collection_remark_ in item
+            for bk, tittle, data_base_remark_, collection_remark_ in item
         ]
         return TableData[KnowledgeToBook](total=count,items=items)
     async def get_all_data(self) -> List[BookKnowledgeId]:

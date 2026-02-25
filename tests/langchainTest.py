@@ -47,7 +47,7 @@ print("Executor 输出：", executor_result["output"])
 
 # 定义一个数据模型（用于把JSON转成对象）
 class Book(BaseModel):
-    title: str
+    tittle: str
     author: str
     year: int
     genre: str
@@ -58,7 +58,7 @@ llm = ChatTongyi(model="qwen-plus", api_key="sk-")
 # 定义提示模板
 prompt = ChatPromptTemplate.from_template("""
 请生成一个书籍信息的JSON，包含以下字段：
-title（书名）、author（作者）、year（出版年份）、genre（类型）。
+tittle（书名）、author（作者）、year（出版年份）、genre（类型）。
 只返回JSON格式。
 """)
 

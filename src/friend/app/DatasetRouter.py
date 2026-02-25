@@ -60,12 +60,8 @@ async def get_options(dataset_db:DatasetDB=Depends(create_dataset_db)):
 
 @datasetRouter.post("/clearChunk")
 async def clear_chunk(data:Dataset,read: ReadNode = Depends(get_read_node),
-                      chat_node:ChatNode=Depends(get_chat_node)):
+                      join_link_db:JoinLinkDB=Depends(create_join_link_db),):
     logger.info(f"清理一下指定文本的chunk:\n{data}")
-    # result = await join_link_db.get_books_data_by_extract(data.id)
-    # await chat_node.user_ollama_qwen3_abliterated_8b_7("你好啊")
-    message = "26.5.3　编写脚本edit.cgi\n脚本edit.cgi实际上承担了双重职责：既用于编辑新消息，也用于编辑回复。这两项功能的差别并不大：如果在CGI请求中提供了reply_to，就将其存储在编辑表单中一个隐藏的input元素中。在Web表单中，隐藏的input元素用于临时存储信息。它们不像文本区域等元素那样是用户能够看到的，但它们的值也将传递给表单的属性action指定的CGI脚本，这让生成表单的脚本能够向处理该表单的脚本传递信息。\n另外，默认将主题设置为\"Re: parentsubject\"（除非主题已经以Re:打头，在这种情况下，不用继续添加Re:）。处理这些细节的代码片段如下：\nsubject = ''\nif reply_to is not None:\n print('<input type=\"hidden\" name=\"reply_to\" value=\"{}\"/>'.format(reply_to))\n curs.execute('SELECT subject FROM messages WHERE id = %s', (reply_to,))\n subject = curs.fetchone()[0]\n if not subject.startswith('Re: '):\n subject = 'Re: ' + subject"
-    res = await read.clear_chunk(message)
-    for item in res:
-        print(item)
+    result = await join_link_db.get_books_data_by_clear(data.id)
+    await read.clear_database(result)
     return R.ok().messages("完成")

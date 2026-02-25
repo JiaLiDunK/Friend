@@ -15,6 +15,9 @@ class AgentsDB:
         await self.session.__aexit__(exc_type, exc, tb)
 
 # 工厂函数
+# async def create_agents_db():
+#     async with async_session() as session:
+#         yield AgentsDB(session)
 async def create_agents_db():
     async with async_session() as session:
         yield AgentsDB(session)

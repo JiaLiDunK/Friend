@@ -91,7 +91,7 @@ async def del_book_vectors(data:BookVectors,book_vectors_db:BookVectorsDB=Depend
 @booksRouter.post("/getKnowledgeBooks")
 async def get_knowledge_books(data:QueryTable,book_vectors_knowledge_id:BookKnowledgeIdDB=Depends(create_book_vectors_knowledge_id_db)) -> R:
     """获取知识库选择的书籍"""
-    logger.info(f"查询知识库中书籍{data}")
+    logger.info(f"查询知识库中书籍:{data}")
     result = await book_vectors_knowledge_id.get_data_list(data)
     return R.ok().messages("查询成功").data_dict(result)
 @booksRouter.post("/delKnowledgeBooks")

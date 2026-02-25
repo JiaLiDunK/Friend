@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from src.friend.entity.po.BookKnowledgeId import BookKnowledgeId
@@ -21,7 +23,7 @@ class BookToVectors(BaseModel):
             tittle=tittle,
         )
 class KnowledgeToBook(BaseModel):
-    tittle: str
+    tittle: Optional[str] = None
     id: int
     type_id: int
     uuid: str
