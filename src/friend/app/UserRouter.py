@@ -23,7 +23,7 @@ async def register(data: UserRegister,
                user_db: UserDB = Depends(create_user_db)) -> R:
     """注册"""
     logger.info("用户注册:",data.username)
-    return R.error().messages("暂时不支持注册")
+    # return R.error().messages("暂时不支持注册")
     salt = await generate_random_string()
     password = data.password + salt
     password = hashlib.sha256(password.encode("utf-8")).hexdigest()
