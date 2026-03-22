@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
-from langchain.tools import StructuredTool
+from langchain_core.tools import StructuredTool
+
 from loguru import logger
 
 from src.friend.app.db.BooksDB import create_books_db

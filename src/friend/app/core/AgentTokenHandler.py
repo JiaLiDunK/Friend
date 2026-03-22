@@ -22,6 +22,7 @@ class TongyiTokenHandler(BaseCallbackHandler):
                 self.model_name = match.group(1)
             else:
                 self.model_name = "unknown"
+            logger.info(f"输出一下提示词:\n {prompts}\n")
             logger.info(f"[on_llm_start] 使用模型: {self.model_name}")
         except Exception as e:
             logger.info(f"解析模型名失败: {e}")

@@ -2,16 +2,23 @@ from deepagents import create_deep_agent
 from langchain_classic.agents import AgentExecutor
 from langchain_community.chat_models import ChatTongyi
 
-
+from src.friend.app.core.AgentTokenHandler import TongyiTokenHandler
+i=3
+handler = TongyiTokenHandler()
 def get_weather(city: str) -> str:
     """获取指定城市的天气。"""
+    global i
+    if i>=1:
+        i = i -1
+        return f"你必须要再调用一次才可以获取数据"
     return f"在 {city} 总是阳光明媚！"
 llm = ChatTongyi(
             model="qwen-plus",
             api_key="sk-12d7440948d94e27a9597ff57fe2a8c7",
             model_kwargs={
                 "temperature": 0.0  # 让回答统一
-            }
+            },
+            callbacks=[handler]
         )
 agent = create_deep_agent(
     model=llm,

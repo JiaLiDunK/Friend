@@ -1,4 +1,5 @@
-from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from loguru import logger
@@ -65,8 +66,8 @@ class DataBaseNode:
             MessagesPlaceholder("agent_scratchpad"),
         ])
         # 创建agent和executor
-        self.save_database_agent  = create_openai_tools_agent(self.agent_llm,self.tools,self.prompt)
-        self.save_database_executor = AgentExecutor(agent=self.save_database_agent, tools=self.tools, verbose=True)
+        # self.save_database_agent  = create_openai_tools_agent(self.agent_llm,self.tools,self.prompt)
+        self.save_database_executor = create_agent(model=self.agent_llm, tools=self.tools,system_prompt=self.prompt)
     @classmethod
     async def create(cls):
         knowledge_base_db = await create_knowledge_base_db_by_load()
