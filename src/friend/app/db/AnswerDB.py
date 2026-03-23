@@ -9,12 +9,6 @@ from src.friend.entity.po.Answer import Answer
 class AnswerDB:
     def __init__(self,session: AsyncSession):
         self.session = session
-    async def __aenter__(self):
-        self.session = async_session()
-        await self.session.__aenter__()
-        return AnswerDB(self.session)
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.session.__aexit__(exc_type, exc, tb)
     async def insert_data_list(self,data:List[Answer]):
         """批量插入数据"""
         self.session.add_all(data)
@@ -24,6 +18,3 @@ class AnswerDB:
 async def create_answer_db():
     async with async_session() as session:
         yield AnswerDB(session)
-async def create_answer_db_by_load():
-    async with async_session() as session:
-        return AnswerDB(session)
