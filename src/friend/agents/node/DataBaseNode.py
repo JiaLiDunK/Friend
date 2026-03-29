@@ -1,3 +1,5 @@
+from typing import List
+
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatTongyi
@@ -16,11 +18,12 @@ from src.friend.app.db.BookVectorsDB import create_book_vectors_db_by_load
 from src.friend.app.db.ChunkDB import create_chunk_db_by_load
 from src.friend.app.db.KnowledgeBaseDB import create_knowledge_base_db_by_load
 from src.friend.app.db.PromptDB import create_prompt_db_by_load
+from src.friend.app.db.QApairsDB import create_qa_pairs_load
 from src.friend.config.SettingConfig import settings
 
 
 class DataBaseNode:
-    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,book_knowledge_id:BookKnowledgeIdDB):
+    def __init__(self,llm_manager:LLMManager,knowledge_base_db,book_vectors_db,prompt_db,qa_db,system_prompt,milvus_node,chunk_db,rag_node,book_knowledge_id:BookKnowledgeIdDB):
         self.llm = ChatTongyi(
             model=settings.MODEL,
             api_key=settings.API_KEY_ALI,
@@ -39,6 +42,7 @@ class DataBaseNode:
             callbacks=[handler]
         )
         self.knowledge_base_db = knowledge_base_db
+        self.qa_db = qa_db
         self.book_vectors_db = book_vectors_db
         self.milvus_node = milvus_node
         self.prompt_db = prompt_db
@@ -67,12 +71,13 @@ class DataBaseNode:
         ])
         # 创建agent和executor
         # self.save_database_agent  = create_openai_tools_agent(self.agent_llm,self.tools,self.prompt)
-        self.save_database_executor = create_agent(model=self.agent_llm, tools=self.tools,system_prompt=self.prompt)
+        self.save_database_executor = create_agent(model=self.agent_llm, tools=self.tools,system_prompt=str(self.prompt))
     @classmethod
     async def create(cls):
         knowledge_base_db = await create_knowledge_base_db_by_load()
         book_vectors_db = await create_book_vectors_db_by_load()
         prompt_db = await create_prompt_db_by_load()
+        qa_db = await create_qa_pairs_load()
         milvus_node = await create_milvus_node()
         chunk_db = await  create_chunk_db_by_load()
         rag_node = await get_rag_node()
@@ -80,7 +85,9 @@ class DataBaseNode:
         book_knowledge_id = await create_book_vectors_knowledge_id_db_by_load()
         # 从数据库中读取system提示词
         system_prompt = await prompt_db.get_prompt_by_id(4)
-        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,system_prompt,milvus_node,chunk_db,rag_node,book_knowledge_id)
+        return cls(llm_manager,knowledge_base_db,book_vectors_db,prompt_db,qa_db,system_prompt,milvus_node,chunk_db,rag_node,book_knowledge_id)
+
+
     async def should_create_knowledge_base(self,data:DataBaseState):
         """判断是否需要创建知识库,如果需要知识库,则返回对应的书籍"""
         knowledge_base_list = await self.knowledge_base_db.get_data_to_ai()
@@ -126,6 +133,8 @@ class DataBaseNode:
             return 'end'
         else:
             return 'continue'
+
+
     async def data_to_chunk(self):
         """把所有标注了知识库id和type_id为8的书籍向量化"""
         # 1.获取所有知识库和相关集合的信息
@@ -151,6 +160,8 @@ class DataBaseNode:
             # 4.将数据插入进数据库中
             await self.milvus_node.insert_into_data(data=data_to_insert,data_base_name=knowledge_base_data.data_base,collection_name=knowledge_base_data.collection)
             logger.info(f"插入完成{item}")
+
+
     async def vector_all_books(self):
         """向量化所有的书籍"""
         # 1.获取所有知识库和相关集合的信息
@@ -178,6 +189,26 @@ class DataBaseNode:
 
 
 
+    async def vector_qa(self,sole_uuid:str,name:str):
+        """向量化qa的数据集"""
+        logger.info("开始插入")
+        await self.milvus_node.create_database("qa")
+        await self.milvus_node.create_collection_by_qa("qa",name)
+        data_list = await self.qa_db.get_data_list_by_uuid(sole_uuid)
+        context_list:List[str] = await self.qa_db.get_context_list_by_uuid(sole_uuid)
+        for item in context_list:
+            print(item)
+            print("================")
+            await self.rag_node.text_to_embedding_query_bge(item)
+        embeddings = await self.rag_node.text_to_embedding_documents_bge(context_list)
+        data_to_insert = [
+            {"vector": vec, "content": text.question,"qa_id":text.id}
+            for vec, text in zip(embeddings, data_list)
+        ]
+        # 4.将数据插入进数据库中
+        await self.milvus_node.insert_into_data(data=data_to_insert, data_base_name="qa",
+                                                collection_name=name)
+        logger.info(f"插入完成")
 async def get_data_base_node() -> DataBaseNode:
     if not hasattr(get_data_base_node, "instance"):
         get_data_base_node.instance = await DataBaseNode.create()

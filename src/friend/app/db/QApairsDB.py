@@ -97,6 +97,18 @@ class QApairsDB:
         item = res.all()
         count = total.one()
         return TableData[QApairs](total=count,items=item).model_dump()
+
+    async def get_data_list_by_uuid(self,uuid:str):
+        statement = select(QApairs).where(QApairs.sole_uuid==uuid).order_by(QApairs.id)
+        res = await self.session.exec(statement)
+        item = res.all()
+        return item
+
+    async def get_context_list_by_uuid(self,uuid:str):
+        statement = select(QApairs.question).where(QApairs.sole_uuid==uuid,QApairs.id==15860).order_by(QApairs.id)
+        res = await self.session.exec(statement)
+        item = res.all()
+        return item
 # 工厂函数
 async def create_qa_pairs_db():
     async with async_session() as session:

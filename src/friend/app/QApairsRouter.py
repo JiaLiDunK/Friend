@@ -4,9 +4,13 @@ from typing import List
 from fastapi import APIRouter, Depends
 from loguru import logger
 
+from src.friend.agents.node.DataBaseNode import DataBaseNode, get_data_base_node
 from src.friend.app.db.BooksDB import BooksDB, create_books_db
+from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
 from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db, QApairs
 from src.friend.entity.R import R
+from src.friend.entity.po.dataset import Dataset
+from src.friend.entity.vo.DataSetVo import DataSetVo
 from src.friend.entity.vo.QueryTable import DownLoadJsonData, QAQueryTable
 
 qa_pairsRouter = APIRouter()
@@ -69,3 +73,19 @@ async def down_load_json_by_context(data:DownLoadJsonData,books_db:BooksDB=Depen
     json_str = json.dumps(result, ensure_ascii=False, indent=2)
     logger.info(f"本次下载大小:{len(json_str)}")
     return json_str
+
+
+@qa_pairsRouter.post("/vectorAllQA")
+async def vector_qa(data:DataSetVo
+                    ,join_link_db:JoinLinkDB=Depends(create_join_link_db)
+                    ,books_db:BooksDB=Depends(create_books_db)
+        ,data_base_node:DataBaseNode=Depends(get_data_base_node)):
+    """向量化所有的书"""
+    logger.info(f"向量化指定的qa:{data}")
+    # 获取从数据
+    data_list = await join_link_db.get_by_master_id(data.id)
+    for item in data_list:
+        book = await books_db.get_data_by_id(item.slave_id)
+        await data_base_node.vector_qa(book.uuid,"names"+str(data.id))
+        break
+    return R.ok().messages("向量化成功")

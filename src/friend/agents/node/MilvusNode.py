@@ -219,6 +219,36 @@ class MilvusNode:
             index_params=index_params
         )
 
+
+    async def create_collection_by_qa(self, data_base_name: str, new_collection_name: str):
+        """在指定数据库中创建集合"""
+        self.client.using_database(data_base_name)
+        existing = await self._run_async(self.client.list_collections)
+        if new_collection_name in existing:
+            logger.info(f"集合 '{new_collection_name}' 已存在")
+            return
+        fields = [
+            FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
+            FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=512),
+            FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096),
+            FieldSchema(name="qa_id", dtype=DataType.INT64),
+        ]
+        schema = CollectionSchema(fields=fields, enable_dynamic_field=True)
+        await self._run_async(self.client.create_collection, new_collection_name, schema=schema)
+        logger.success(f"集合 '{new_collection_name}' 创建成功")
+        #创建索引
+        index_params = IndexParams()
+        index_params.add_index(
+            field_name="vector",
+            index_type="HNSW",
+            metric_type="L2",
+            params={"M": 8, "efConstruction": 64}
+        )
+        await self._run_async(
+            self.client.create_index,
+            collection_name=new_collection_name,
+            index_params=index_params
+        )
 # ------------------------- 单例管理 -------------------------
 _milvus_node_instance: Optional[MilvusNode] = None
 _milvus_lock = asyncio.Lock()

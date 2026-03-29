@@ -13,6 +13,7 @@ from src.friend.entity.po.BookKnowledgeId import BookKnowledgeId
 from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
+from src.friend.entity.po.QApairs import QApairs
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TypeOptions import JoinOption
 

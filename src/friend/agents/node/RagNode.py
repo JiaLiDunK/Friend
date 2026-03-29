@@ -8,10 +8,10 @@ from loguru import logger
 class RagNode:
     """
     RagNode 负责文本向量化 (embedding)，支持 query 与 documents 两种模式。
-    默认使用 Ollama 的 bge-m3 模型。
+    默认使用 Ollama 的 bge-m3 模型。bge-m3:latest
     """
 
-    def __init__(self, model_name: str = "bge-m3:latest"):
+    def __init__(self, model_name: str = "quentinz/bge-small-zh-v1.5:latest"):
         self.model_name = model_name
         self._bge_m3: Optional[OllamaEmbeddings] = None
         self._lock = asyncio.Lock()  # 防止多协程同时初始化

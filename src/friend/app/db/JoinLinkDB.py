@@ -100,6 +100,12 @@ class JoinLinkDB:
         statement = update(JoinLink).where(JoinLink.id==ids).values(clear_id=clear_id)
         await self.session.exec(statement)
         await self.session.commit()
+
+    async def get_by_master_id(self,ids:int):
+        """根据master_id获取数据"""
+        statement = select(JoinLink).where(JoinLink.master_id==ids)
+        result = await self.session.exec(statement)
+        return result.all()
 # 工厂函数
 async def create_join_link_db():
     async with async_session() as session:
