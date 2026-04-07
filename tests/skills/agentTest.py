@@ -26,9 +26,9 @@ def get_weather(city: str, config: RunnableConfig = None) -> str:
 
     print(f"[TOOL] sole_id={sole_id}, city={city}")
 
-    if i >= 1:
-        i -= 1
-        return "你必须要再调用一次才可以获取数据"
+    # if i >= 1:
+    #     i -= 1
+    #     return "你必须要再调用一次才可以获取数据"
 
     return f"在 {city} 总是阳光明媚！"
 
@@ -89,6 +89,7 @@ if __name__ == "__main__":
         }
     }
     result = agent.invoke(data, config=config)
-    final_answer = result["messages"][-1].content
+    print(result)
+    # final_answer = result["messages"][-1].content
     print("\n[FINAL ANSWER]")
-    print(final_answer)
+    # print(final_answer)
