@@ -1,7 +1,6 @@
 from typing import List
 
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from loguru import logger

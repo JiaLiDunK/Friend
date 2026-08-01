@@ -14,12 +14,12 @@ from PIL import Image
 from bs4 import BeautifulSoup
 from docx import Document
 from ebooklib import epub
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.chat_models import ChatTongyi
 from langchain_community.document_loaders import TextLoader, UnstructuredWordDocumentLoader
+from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
 from pdfplumber.utils.exceptions import PdfminerException
 

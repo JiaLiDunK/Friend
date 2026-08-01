@@ -4,6 +4,7 @@ from sqlmodel import select, func, update, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
+from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TableData import TableData
@@ -86,6 +87,14 @@ class ChunkDB:
         statement = select(Chunk).where(Chunk.uuid == uuid,Chunk.order_id == order_id)
         result = await self.session.exec(statement)
         return result.first()
+
+    async def translate_chunk(self,old_uuid:str,new_uuid:str,order_id:int,content:str,tittle_id:int):
+        """翻译新增"""
+        chunk_data  = Chunk(content=content,order_id=order_id,uuid=new_uuid,type=2,tittle_id=tittle_id)
+        self.session.add(chunk_data)
+        statement = update(Books).where(Books.uuid == old_uuid).values(translate=order_id+1)
+        await self.session.exec(statement)
+        await self.session.commit()
 
 # 工厂函数（业务内部调用用这个）
 async def create_chunk_db():

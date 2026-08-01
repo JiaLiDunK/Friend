@@ -19,3 +19,4 @@ class Books(SQLModel,table=True):
     format:str
     use:str
     remark:str
+    translate: int

@@ -9,7 +9,7 @@ from src.friend.config.SettingConfig import settings
 
 async_engine = create_async_engine(
     url=settings.DATABASE_PG_URL,
-    echo=True,
+    echo=False,
     pool_size=10,  # 最大连接数
     max_overflow=20,  # 超出 pool_size 后还能额外创建的连接
     pool_timeout=30,  # 获取连接超时时间

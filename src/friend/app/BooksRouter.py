@@ -1,19 +1,24 @@
+import json
+import uuid
+from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends
 from loguru import logger
 
 from src.friend.agents.node.DataBaseNode import DataBaseNode, get_data_base_node
+from src.friend.app.Dependencies import get_llm_client
 from src.friend.app.db.BookKnowledgeIdDB import BookKnowledgeIdDB, create_book_vectors_knowledge_id_db
 from src.friend.app.db.BookVectorsDB import create_book_vectors_db, BookVectorsDB
 from src.friend.app.db.BooksDB import BooksDB, create_books_db
 from src.friend.app.db.ChunkDB import ChunkDB, create_chunk_db
+from src.friend.app.db.PromptDB import create_prompt_db, PromptDB
+from src.friend.config.LLMClient import LLMClient
 from src.friend.entity.R import R
 from src.friend.entity.po.BookKnowledgeId import BookKnowledgeId
 from src.friend.entity.po.BookVectors import BookVectors
 from src.friend.entity.po.Books import Books
 from src.friend.entity.po.Chunk import Chunk
-from src.friend.entity.po.QApairs import QApairs
 from src.friend.entity.vo.QueryTable import QueryTable
 from src.friend.entity.vo.TypeOptions import JoinOption
 
@@ -114,3 +119,40 @@ async def get_options(data:JoinOption,book_db:BooksDB=Depends(create_books_db)):
     logger.info("获取books的选项")
     result = await book_db.get_books_option(data)
     return R.ok().data_dict(result)
+
+
+@booksRouter.post("/translateBook")
+async def translate_book(data:Books,book_db:BooksDB=Depends(create_books_db),
+                         chunk_db:ChunkDB=Depends(create_chunk_db),
+                         llm: LLMClient = Depends(get_llm_client),
+                         prompt_db: PromptDB = Depends(create_prompt_db)):
+    """翻译书籍"""
+    logger.info(f"翻译书籍{data}")
+    count = await chunk_db.get_count_by_id(data.uuid)
+    book = await book_db.get_books_data_by_name(data.tittle + "翻译")
+    prompt = await prompt_db.get_prompt_by_id(9)
+    if book is None:
+        data.tittle = data.tittle + "翻译"
+        data.uuid = str(uuid.uuid4())
+        data.id = None
+        data.insert_time = datetime.now()
+        await book_db.insert_data(data)
+    for order_id in range(int(data.translate), count + 1):
+        chunk = await chunk_db.get_order_id_by_uuid(uuid=data.uuid, order_id=order_id)
+        tempt_prompt = prompt.format(message=chunk.content)
+        content = None
+        for retry_count in range(3):
+            out = await llm.use_ollama_llm(tempt_prompt)
+
+            try:
+                json_data = json.loads(out.content)
+                content = json_data["content"]
+                logger.info(f"{order_id}翻译的:{content}")
+                await chunk_db.translate_chunk(old_uuid=data.uuid,new_uuid=book.uuid,order_id=order_id,content=content,tittle_id=book.id)
+                break
+            except Exception as e:
+                logger.warning(f"翻译结果JSON解析失败，第{retry_count + 1}次重试，错误：{e}")
+
+        if content is None:
+            logger.error(f"翻译失败，已放弃，order_id={order_id}")
+            continue

@@ -4,7 +4,6 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from loguru import logger
 
-from src.friend.agents.node.ChatNode import ChatNode, get_chat_node
 from src.friend.agents.node.ReadNode import ReadNode, get_read_node
 from src.friend.app.db.DatasetDB import DatasetDB, create_dataset_db
 from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db

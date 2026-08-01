@@ -22,10 +22,12 @@ class BooksDB:
     async def __aexit__(self, exc_type, exc, tb):
         await self.session.__aexit__(exc_type, exc, tb)
 
-    async def insert_data(self,data:Books):
+    async def insert_data(self, data: Books):
         """插入书籍"""
-        async with self.session.begin():
-            self.session.add(data)
+        self.session.add(data)
+        await self.session.commit()
+        await self.session.refresh(data)
+        return data
 
     async def get_data_list(self,data:QueryTable):
         """根据条件获取书籍的内容"""
@@ -72,6 +74,14 @@ class BooksDB:
             for record in item
         ]
         return option_list
+
+    async def get_books_data_by_name(self,name:str)->Books:
+        """根据名称获取书籍"""
+        statement = select(Books).where(Books.tittle == name)
+        result = await self.session.exec(statement)
+        return result.first()
+
+
 # 工厂函数（业务内部调用用这个）
 async def create_books_db():
     async with async_session() as session:

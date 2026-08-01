@@ -5,7 +5,6 @@ from loguru import logger
 
 from friend.app.db.QApairsDB import QApairsDB
 from friend.config.DBConfig import async_session
-from src.friend.app.db.QApairsDB import create_qa_pairs_load
 
 
 class DataScoreTools:

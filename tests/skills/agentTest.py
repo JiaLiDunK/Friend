@@ -38,7 +38,7 @@ def get_weather(city: str, config: RunnableConfig = None) -> str:
 # =========================
 llm = ChatTongyi(
     model="qwen-plus",
-    api_key="sk-12d7440948d94e27a9597ff57fe2a8c7",
+    api_key="sk-688629f64f264647ae41efe13cb88257",
     model_kwargs={"temperature": 0.0},
     callbacks=[handler],
 )

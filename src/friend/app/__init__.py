@@ -5,6 +5,7 @@ from fastapi.params import Depends
 from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
+from friend.config.LLMClient import LLMClient
 from src.friend.app.AgentRouter import agentRouter
 from src.friend.app.BooksRouter import booksRouter
 from src.friend.app.ChatRouter import chatRouter
@@ -25,6 +26,7 @@ from src.friend.config.SecurityConfig import get_current_user
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("服务器启动中")
+    app.state.llm_client = LLMClient()
     # 先不调用redis
     # await init_redis()
     yield

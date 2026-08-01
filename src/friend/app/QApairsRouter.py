@@ -9,7 +9,6 @@ from src.friend.app.db.BooksDB import BooksDB, create_books_db
 from src.friend.app.db.JoinLinkDB import JoinLinkDB, create_join_link_db
 from src.friend.app.db.QApairsDB import QApairsDB, create_qa_pairs_db, QApairs
 from src.friend.entity.R import R
-from src.friend.entity.po.dataset import Dataset
 from src.friend.entity.vo.DataSetVo import DataSetVo
 from src.friend.entity.vo.QueryTable import DownLoadJsonData, QAQueryTable
 
