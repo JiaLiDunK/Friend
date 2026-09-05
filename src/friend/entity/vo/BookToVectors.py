@@ -7,7 +7,7 @@ from src.friend.entity.po.BookVectors import BookVectors
 
 
 class BookToVectors(BaseModel):
-    tittle: str
+    tittle: Optional[str] = None
     id: int
     uuid: str
     type_id: int

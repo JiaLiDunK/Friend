@@ -72,7 +72,7 @@ class BookKnowledgeIdDB:
         return item
     async def update_all_type_list(self,data_list:List[BookKnowledgeId]):
         """更新数据"""
-        ids = [item[0].id for item in data_list]
+        ids = [item.id for item in data_list]
         if not ids:
             return
         statement = update(BookKnowledgeId).where(BookKnowledgeId.id.in_(ids)).values(type_id=11)

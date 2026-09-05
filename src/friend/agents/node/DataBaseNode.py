@@ -172,10 +172,10 @@ class DataBaseNode:
         # 向量化所有的书籍
         all_data = await self.book_knowledge_id.get_all_data()
         for item in all_data:
-            data_list = await self.chunk_db.get_content_by_uuid(item[0].uuid)
+            data_list = await self.chunk_db.get_content_by_uuid(item.uuid)
             # 向量化，插入进数据库
             embeddings = await self.rag_node.text_to_embedding_documents_bge(data_list)
-            knowledge_base_data = await self.knowledge_base_db.get_data_by_id(item[0].knowledge_base_id)
+            knowledge_base_data = await self.knowledge_base_db.get_data_by_id(item.knowledge_base_id)
             data_to_insert = [
                 {"vector": vec, "content": text}
                 for vec, text in zip(embeddings, data_list)

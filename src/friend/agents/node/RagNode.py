@@ -26,14 +26,25 @@ class RagNode:
                     self._bge_m3 = OllamaEmbeddings(model=self.model_name)
                     logger.success(f"模型 {self.model_name} 加载完成")
 
-    async def text_to_embedding_documents_bge(self, texts: List[str]):
+    async def text_to_embedding_documents_bge(self, texts: List[str], batch_size: int = 16):
         """
         将文本列表转为向量列表
         """
         await self._ensure_model_loaded()
         loop = asyncio.get_running_loop()
-        # embed_documents 是同步函数 → 转线程池执行，防止阻塞事件循环
-        return await loop.run_in_executor(None, lambda: self._bge_m3.embed_documents(texts))
+        embeddings = []
+        total = len(texts)
+        total_batches = (total + batch_size - 1) // batch_size
+        logger.info(f"开始向量化文档，总数：{total}，批大小：{batch_size}，总批次：{total_batches}")
+        for index in range(0, len(texts), batch_size):
+            batch = texts[index:index + batch_size]
+            batch_no = index // batch_size + 1
+            logger.info(f"正在向量化第 {batch_no}/{total_batches} 批，范围：{index + 1}-{index + len(batch)}")
+            batch_embeddings = await loop.run_in_executor(None, lambda batch=batch: self._bge_m3.embed_documents(batch))
+            embeddings.extend(batch_embeddings)
+            logger.info(f"第 {batch_no}/{total_batches} 批向量化完成，当前进度：{len(embeddings)}/{total}")
+        logger.success(f"文档向量化完成，总数：{len(embeddings)}/{total}")
+        return embeddings
 
     async def text_to_embedding_query_bge(self, text: str):
         """
