@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlmodel import select, update, func, delete
+from sqlmodel import select, update, func, delete, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.friend.config.DBConfig import async_session
@@ -46,7 +46,7 @@ class BookVectorsDB:
         if data.keywords:
             statement = statement.where(Books.tittle.like(f"%{data.keywords}%"))
             count_statement = count_statement.where(Books.tittle.like(f"%{data.keywords}%"))
-        statement = statement.limit(data.pagesize).offset(data.page_num)
+        statement = statement.limit(data.pagesize).offset(data.page_num).order_by(desc(BookVectors.id))
         result = await self.session.exec(statement)
         total = await self.session.exec(count_statement)
         item = result.all()

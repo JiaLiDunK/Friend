@@ -87,7 +87,7 @@ class SearchNode:
         message = ""
         i = 1
         for item in result_list:
-            message +=f"{i}.{item.content}\n==============\n"
+            message += f"{i}.相似度/距离:{item.distance}\n{item.content}\n======\n"
             i += 1
         return message
 
