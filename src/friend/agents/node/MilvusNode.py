@@ -106,7 +106,7 @@ class MilvusNode:
         )
         milvus_list = [SearchContent(**item) for item in data_list[0]]
         # 过滤掉相似度低的数据
-        milvus_list = [item for item in milvus_list if item.distance >= 0.65]
+        milvus_list = [item for item in milvus_list if item.distance <= 0.6]
         if len(milvus_list) == 0:
             return []
         result_list: List[SelectContent] = []
@@ -141,7 +141,7 @@ class MilvusNode:
         )
         milvus_list = [SearchContent(**item) for item in data_list[0]]
         # 过滤掉相似度低的数据
-        milvus_list = [item for item in milvus_list if item.distance >= 0.65]
+        milvus_list = [item for item in milvus_list if item.distance <= 0.8]
         if len(milvus_list) == 0:
             return []
         # 下述是根据id获取前后文的内容,暂时不需要

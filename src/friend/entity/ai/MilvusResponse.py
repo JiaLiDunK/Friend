@@ -21,8 +21,8 @@ class SelectContent:
         self.content = content
 
     def __lt__(self, other):
-        # Sort by distance in descending order (larger distance comes first)
-        return self.distance > other.distance
+        # Sort by distance in ascending order (smaller distance comes first)
+        return self.distance < other.distance
 
     def __repr__(self):
         return f"SelectContent(distance={self.distance}, id={self.id}, content='{self.content[:50]}...')"
